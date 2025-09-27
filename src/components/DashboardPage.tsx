@@ -20,6 +20,7 @@ import {
 
 interface DashboardPageProps {
   onBackToLanding: () => void;
+  onCarouselPreview: (carouselId: string) => void;
 }
 
 interface ContentCard {
@@ -131,7 +132,7 @@ const toneFilters = [
   'Storytelling'
 ];
 
-const DashboardPage: React.FC<DashboardPageProps> = ({ onBackToLanding }) => {
+const DashboardPage: React.FC<DashboardPageProps> = ({ onBackToLanding, onCarouselPreview }) => {
   const [content, setContent] = useState<ContentCard[]>(mockContent);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedPillar, setSelectedPillar] = useState('All Pillars');
@@ -412,9 +413,12 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onBackToLanding }) => {
                   </button>
                   
                   {item.type === 'carousel' && (
-                    <button className="flex items-center justify-center space-x-2 py-2 px-3 bg-magenta hover:bg-magenta/80 text-white rounded-lg font-medium text-sm transition-colors">
+                    <button 
+                      onClick={() => onCarouselPreview(item.id)}
+                      className="flex items-center justify-center space-x-2 py-2 px-3 bg-magenta hover:bg-magenta/80 text-white rounded-lg font-medium text-sm transition-colors"
+                    >
                       <Download className="w-4 h-4" />
-                      <span>Download</span>
+                      <span>Preview</span>
                     </button>
                   )}
                 </div>
