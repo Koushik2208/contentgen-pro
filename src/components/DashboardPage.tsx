@@ -21,6 +21,7 @@ import {
 interface DashboardPageProps {
   onBackToLanding: () => void;
   onCarouselPreview: (carouselId: string) => void;
+  onProfileSettings: () => void;
 }
 
 interface ContentCard {
@@ -132,7 +133,7 @@ const toneFilters = [
   'Storytelling'
 ];
 
-const DashboardPage: React.FC<DashboardPageProps> = ({ onBackToLanding, onCarouselPreview }) => {
+const DashboardPage: React.FC<DashboardPageProps> = ({ onBackToLanding, onCarouselPreview, onProfileSettings }) => {
   const [content, setContent] = useState<ContentCard[]>(mockContent);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedPillar, setSelectedPillar] = useState('All Pillars');
@@ -201,13 +202,22 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onBackToLanding, onCarous
                   ContentGen Pro
                 </span>
               </div>
-              <button
-                onClick={onBackToLanding}
-                className="flex items-center space-x-2 text-gray-400 hover:text-white transition-colors"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                <span>Back to Home</span>
-              </button>
+              <div className="flex items-center space-x-4">
+                <button
+                  onClick={onProfileSettings}
+                  className="flex items-center space-x-2 text-gray-400 hover:text-white transition-colors"
+                >
+                  <Users className="w-4 h-4" />
+                  <span>Profile</span>
+                </button>
+                <button
+                  onClick={onBackToLanding}
+                  className="flex items-center space-x-2 text-gray-400 hover:text-white transition-colors"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  <span>Home</span>
+                </button>
+              </div>
             </div>
           </div>
         </header>

@@ -5,6 +5,7 @@ interface CarouselPreviewPageProps {
   carouselId: string | null;
   onBackToDashboard: () => void;
   onBackToLanding: () => void;
+  onProfileSettings: () => void;
 }
 
 interface CarouselSlide {
@@ -130,7 +131,8 @@ const mockCarousels: Record<string, { title: string; slides: CarouselSlide[] }> 
 const CarouselPreviewPage: React.FC<CarouselPreviewPageProps> = ({ 
   carouselId, 
   onBackToDashboard, 
-  onBackToLanding 
+  onBackToLanding,
+  onProfileSettings
 }) => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [showThumbnails, setShowThumbnails] = useState(false);
@@ -208,6 +210,12 @@ const CarouselPreviewPage: React.FC<CarouselPreviewPageProps> = ({
                 >
                   <ArrowLeft className="w-4 h-4" />
                   <span>Back to Dashboard</span>
+                </button>
+                <button
+                  onClick={onProfileSettings}
+                  className="text-gray-400 hover:text-white transition-colors text-sm"
+                >
+                  Profile
                 </button>
                 <button
                   onClick={onBackToLanding}
