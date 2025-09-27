@@ -1,7 +1,11 @@
 import React from 'react';
 import { Play, Star, Users, TrendingUp } from 'lucide-react';
 
-const HeroSection = () => {
+interface HeroSectionProps {
+  onGetStarted?: () => void;
+}
+
+const HeroSection: React.FC<HeroSectionProps> = ({ onGetStarted }) => {
   return (
     <section className="relative overflow-hidden bg-gradient-to-br from-charcoal via-dark-gray to-charcoal">
       {/* Background Effects */}
@@ -66,7 +70,10 @@ const HeroSection = () => {
 
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-4">
-              <button className="bg-gradient-to-r from-electric-blue to-magenta text-white px-8 py-4 rounded-full font-semibold text-lg hover:shadow-lg hover:shadow-electric-blue/25 transition-all duration-300 animate-pulse-glow">
+              <button 
+                onClick={onGetStarted}
+                className="bg-gradient-to-r from-electric-blue to-magenta text-white px-8 py-4 rounded-full font-semibold text-lg hover:shadow-lg hover:shadow-electric-blue/25 transition-all duration-300 animate-pulse-glow"
+              >
                 Start Creating Content
               </button>
               <button className="flex items-center justify-center space-x-2 border border-gray-600 text-gray-300 px-8 py-4 rounded-full font-semibold text-lg hover:border-electric-blue hover:text-electric-blue transition-colors">

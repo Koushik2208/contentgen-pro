@@ -1,7 +1,11 @@
 import React, { useState } from 'react';
 import { Menu, X, Zap } from 'lucide-react';
 
-const Header = () => {
+interface HeaderProps {
+  onGetStarted?: () => void;
+}
+
+const Header: React.FC<HeaderProps> = ({ onGetStarted }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
@@ -32,7 +36,10 @@ const Header = () => {
             <a href="#faq" className="text-gray-300 hover:text-electric-blue transition-colors">
               FAQ
             </a>
-            <button className="bg-gradient-to-r from-electric-blue to-magenta text-white px-6 py-2 rounded-full font-semibold hover:shadow-lg hover:shadow-electric-blue/25 transition-all duration-300">
+            <button 
+              onClick={onGetStarted}
+              className="bg-gradient-to-r from-electric-blue to-magenta text-white px-6 py-2 rounded-full font-semibold hover:shadow-lg hover:shadow-electric-blue/25 transition-all duration-300"
+            >
               Get Started
             </button>
           </nav>
@@ -62,7 +69,10 @@ const Header = () => {
               <a href="#faq" className="text-gray-300 hover:text-electric-blue transition-colors">
                 FAQ
               </a>
-              <button className="bg-gradient-to-r from-electric-blue to-magenta text-white px-6 py-2 rounded-full font-semibold w-full">
+              <button 
+                onClick={onGetStarted}
+                className="bg-gradient-to-r from-electric-blue to-magenta text-white px-6 py-2 rounded-full font-semibold w-full"
+              >
                 Get Started
               </button>
             </nav>
