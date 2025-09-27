@@ -1,11 +1,14 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Play, Star, Users, TrendingUp } from 'lucide-react';
 
-interface HeroSectionProps {
-  onGetStarted?: () => void;
-}
+const HeroSection = () => {
+  const navigate = useNavigate();
 
-const HeroSection: React.FC<HeroSectionProps> = ({ onGetStarted }) => {
+  const handleGetStarted = () => {
+    navigate('/onboarding');
+  };
+
   return (
     <section className="relative overflow-hidden bg-gradient-to-br from-charcoal via-dark-gray to-charcoal">
       {/* Background Effects */}
@@ -71,7 +74,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onGetStarted }) => {
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-4">
               <button 
-                onClick={onGetStarted}
+                onClick={handleGetStarted}
                 className="bg-gradient-to-r from-electric-blue to-magenta text-white px-8 py-4 rounded-full font-semibold text-lg hover:shadow-lg hover:shadow-electric-blue/25 transition-all duration-300 animate-pulse-glow"
               >
                 Start Creating Content

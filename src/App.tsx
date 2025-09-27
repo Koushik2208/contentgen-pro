@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import Header from './components/Header';
 import HeroSection from './components/HeroSection';
 import BenefitsSection from './components/BenefitsSection';
@@ -11,77 +12,13 @@ import DashboardPage from './components/DashboardPage';
 import CarouselPreviewPage from './components/CarouselPreviewPage';
 import ProfileSettingsPage from './components/ProfileSettingsPage';
 
-function App() {
-  const [currentPage, setCurrentPage] = useState<'landing' | 'onboarding' | 'dashboard' | 'carousel-preview' | 'profile-settings'>('landing');
-  const [selectedCarousel, setSelectedCarousel] = useState<string | null>(null);
-
-  const handleGetStarted = () => {
-    setCurrentPage('onboarding');
-  };
-
-  const handleBackToLanding = () => {
-    setCurrentPage('landing');
-  };
-
-  const handleOnboardingComplete = () => {
-    setCurrentPage('dashboard');
-  };
-
-  const handleCarouselPreview = (carouselId: string) => {
-    setSelectedCarousel(carouselId);
-    setCurrentPage('carousel-preview');
-  };
-
-  const handleBackToDashboard = () => {
-    setCurrentPage('dashboard');
-    setSelectedCarousel(null);
-  };
-
-  const handleProfileSettings = () => {
-    setCurrentPage('profile-settings');
-  };
-
-  const handleBackToProfile = () => {
-    setCurrentPage('profile-settings');
-  };
-  if (currentPage === 'onboarding') {
-    return <OnboardingPage onBack={handleBackToLanding} onComplete={handleOnboardingComplete} />;
-  }
-
-  if (currentPage === 'dashboard') {
-    return (
-      <DashboardPage 
-        onBackToLanding={() => setCurrentPage('landing')}
-        onCarouselPreview={handleCarouselPreview}
-        onProfileSettings={handleProfileSettings}
-      />
-    );
-  }
-
-  if (currentPage === 'carousel-preview') {
-    return (
-      <CarouselPreviewPage 
-        carouselId={selectedCarousel}
-        onBackToDashboard={handleBackToDashboard}
-        onBackToLanding={() => setCurrentPage('landing')}
-        onProfileSettings={handleProfileSettings}
-      />
-    );
-  }
-
-  if (currentPage === 'profile-settings') {
-    return (
-      <ProfileSettingsPage 
-        onBackToDashboard={handleBackToDashboard}
-        onBackToLanding={() => setCurrentPage('landing')}
-      />
-    );
-  }
+// Landing Page Component
+const LandingPage = () => {
   return (
     <div className="min-h-screen bg-charcoal text-white font-manrope">
-      <Header onGetStarted={handleGetStarted} />
+      <Header />
       <main>
-        <HeroSection onGetStarted={handleGetStarted} />
+        <HeroSection />
         <BenefitsSection />
         <HowItWorksSection />
         <TestimonialsSection />
@@ -89,6 +26,30 @@ function App() {
       </main>
       <Footer />
     </div>
+  );
+};
+
+function App() {
+  return (
+    <Routes>
+      {/* Landing Page */}
+      <Route path="/" element={<LandingPage />} />
+      
+      {/* Onboarding */}
+      <Route path="/onboarding" element={<OnboardingPage />} />
+      
+      {/* Dashboard */}
+      <Route path="/dashboard" element={<DashboardPage />} />
+      
+      {/* Carousel Preview */}
+      <Route path="/carousel/:carouselId" element={<CarouselPreviewPage />} />
+      
+      {/* Profile Settings */}
+      <Route path="/profile" element={<ProfileSettingsPage />} />
+      
+      {/* Redirect any unknown routes to landing page */}
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   );
 }
 

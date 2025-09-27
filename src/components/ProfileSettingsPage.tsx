@@ -1,10 +1,6 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Save, User, Settings, Bell, Shield, Trash2, Zap, Eye, EyeOff, Check } from 'lucide-react';
-
-interface ProfileSettingsPageProps {
-  onBackToDashboard: () => void;
-  onBackToLanding: () => void;
-}
 
 interface UserProfile {
   name: string;
@@ -61,8 +57,9 @@ const contentPillars = [
   { id: 'industry-insights', label: 'Industry Insights' }
 ];
 
-const ProfileSettingsPage: React.FC<ProfileSettingsPageProps> = ({ onBackToDashboard, onBackToLanding }) => {
+const ProfileSettingsPage = () => {
   const [activeTab, setActiveTab] = useState<'profile' | 'preferences' | 'account'>('profile');
+  const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
@@ -146,6 +143,14 @@ const ProfileSettingsPage: React.FC<ProfileSettingsPageProps> = ({ onBackToDashb
     }));
   };
 
+  const handleBackToDashboard = () => {
+    navigate('/dashboard');
+  };
+
+  const handleBackToLanding = () => {
+    navigate('/');
+  };
+
   const tabs = [
     { id: 'profile', label: 'Profile Info', icon: User },
     { id: 'preferences', label: 'Content Preferences', icon: Settings },
@@ -175,14 +180,14 @@ const ProfileSettingsPage: React.FC<ProfileSettingsPageProps> = ({ onBackToDashb
               </div>
               <div className="flex items-center space-x-4">
                 <button
-                  onClick={onBackToDashboard}
+                  onClick={handleBackToDashboard}
                   className="flex items-center space-x-2 text-gray-400 hover:text-white transition-colors"
                 >
                   <ArrowLeft className="w-4 h-4" />
                   <span>Back to Dashboard</span>
                 </button>
                 <button
-                  onClick={onBackToLanding}
+                  onClick={handleBackToLanding}
                   className="text-gray-400 hover:text-white transition-colors text-sm"
                 >
                   Home

@@ -1,12 +1,6 @@
 import React, { useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, Download, Zap, ChevronLeft, ChevronRight, Grid3x3 as Grid3X3, Palette, Type, Sparkles } from 'lucide-react';
-
-interface CarouselPreviewPageProps {
-  carouselId: string | null;
-  onBackToDashboard: () => void;
-  onBackToLanding: () => void;
-  onProfileSettings: () => void;
-}
 
 interface CarouselSlide {
   id: number;
@@ -128,13 +122,10 @@ const mockCarousels: Record<string, { title: string; slides: CarouselSlide[] }> 
   }
 };
 
-const CarouselPreviewPage: React.FC<CarouselPreviewPageProps> = ({ 
-  carouselId, 
-  onBackToDashboard, 
-  onBackToLanding,
-  onProfileSettings
-}) => {
+const CarouselPreviewPage = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
+  const navigate = useNavigate();
+  const { carouselId } = useParams<{ carouselId: string }>();
   const [showThumbnails, setShowThumbnails] = useState(false);
   const [customization, setCustomization] = useState({
     backgroundColor: 'default',
@@ -150,7 +141,7 @@ const CarouselPreviewPage: React.FC<CarouselPreviewPageProps> = ({
         <div className="text-center">
           <h1 className="text-2xl font-bebas text-white mb-4">Carousel Not Found</h1>
           <button
-            onClick={onBackToDashboard}
+            onClick={handleBackToDashboard}
             className="bg-gradient-to-r from-electric-blue to-magenta text-white px-6 py-3 rounded-full font-semibold hover:shadow-lg hover:shadow-electric-blue/25 transition-all duration-300"
           >
             Back to Dashboard
@@ -182,6 +173,18 @@ const CarouselPreviewPage: React.FC<CarouselPreviewPageProps> = ({
     // In real app, this would trigger file generation and download
   };
 
+  const handleBackToDashboard = () => {
+    navigate('/dashboard');
+  };
+
+  const handleBackToLanding = () => {
+    navigate('/');
+  };
+
+  const handleProfileSettings = () => {
+    navigate('/profile');
+  };
+
   return (
     <div className="min-h-screen bg-charcoal text-white font-manrope">
       {/* Background Effects */}
@@ -205,20 +208,20 @@ const CarouselPreviewPage: React.FC<CarouselPreviewPageProps> = ({
               </div>
               <div className="flex items-center space-x-4">
                 <button
-                  onClick={onBackToDashboard}
+                  onClick={handleBackToDashboard}
                   className="flex items-center space-x-2 text-gray-400 hover:text-white transition-colors"
                 >
                   <ArrowLeft className="w-4 h-4" />
                   <span>Back to Dashboard</span>
                 </button>
                 <button
-                  onClick={onProfileSettings}
+                  onClick={handleProfileSettings}
                   className="text-gray-400 hover:text-white transition-colors text-sm"
                 >
                   Profile
                 </button>
                 <button
-                  onClick={onBackToLanding}
+                  onClick={handleBackToLanding}
                   className="text-gray-400 hover:text-white transition-colors text-sm"
                 >
                   Home
@@ -424,7 +427,7 @@ const CarouselPreviewPage: React.FC<CarouselPreviewPageProps> = ({
                   <span>Generate Another Carousel</span>
                 </button>
                 <button
-                  onClick={onBackToDashboard}
+                  onClick={handleBackToDashboard}
                   className="w-full border border-gray-600 text-gray-300 py-3 px-4 rounded-lg font-semibold hover:border-electric-blue hover:text-electric-blue transition-colors"
                 >
                   Return to Dashboard

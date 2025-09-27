@@ -1,10 +1,6 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, Check, Zap, User, Briefcase, Target } from 'lucide-react';
-
-interface OnboardingPageProps {
-  onBack: () => void;
-  onComplete: () => void;
-}
 
 interface FormData {
   name: string;
@@ -43,8 +39,9 @@ const tones = [
   { id: 'educational', label: 'Educational', description: 'Informative, helpful, teaching-focused' }
 ];
 
-const OnboardingPage: React.FC<OnboardingPageProps> = ({ onBack, onComplete }) => {
+const OnboardingPage = () => {
   const [currentStep, setCurrentStep] = useState(1);
+  const navigate = useNavigate();
   const [formData, setFormData] = useState<FormData>({
     name: '',
     email: '',
@@ -100,7 +97,11 @@ const OnboardingPage: React.FC<OnboardingPageProps> = ({ onBack, onComplete }) =
 
   const handleSubmit = () => {
     console.log('Onboarding completed:', formData);
-    onComplete();
+    navigate('/dashboard');
+  };
+
+  const handleBackToHome = () => {
+    navigate('/');
   };
 
   const handleGoalToggle = (goalId: string) => {
@@ -161,7 +162,7 @@ const OnboardingPage: React.FC<OnboardingPageProps> = ({ onBack, onComplete }) =
                 </span>
               </div>
               <button
-                onClick={onBack}
+                onClick={handleBackToHome}
                 className="flex items-center space-x-2 text-gray-400 hover:text-white transition-colors"
               >
                 <ArrowLeft className="w-4 h-4" />

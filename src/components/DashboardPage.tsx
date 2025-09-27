@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Zap, 
   Copy, 
@@ -17,12 +18,6 @@ import {
   Target,
   MessageCircle
 } from 'lucide-react';
-
-interface DashboardPageProps {
-  onBackToLanding: () => void;
-  onCarouselPreview: (carouselId: string) => void;
-  onProfileSettings: () => void;
-}
 
 interface ContentCard {
   id: string;
@@ -133,8 +128,9 @@ const toneFilters = [
   'Storytelling'
 ];
 
-const DashboardPage: React.FC<DashboardPageProps> = ({ onBackToLanding, onCarouselPreview, onProfileSettings }) => {
+const DashboardPage = () => {
   const [content, setContent] = useState<ContentCard[]>(mockContent);
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedPillar, setSelectedPillar] = useState('All Pillars');
   const [selectedTone, setSelectedTone] = useState('All Tones');
@@ -159,6 +155,18 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onBackToLanding, onCarous
     setContent(prev => prev.map(item => 
       item.id === id ? { ...item, isFavorited: !item.isFavorited } : item
     ));
+  };
+
+  const handleCarouselPreview = (carouselId: string) => {
+    navigate(`/carousel/${carouselId}`);
+  };
+
+  const handleProfileSettings = () => {
+    navigate('/profile');
+  };
+
+  const handleBackToLanding = () => {
+    navigate('/');
   };
 
   const getContentTypeIcon = (type: string) => {
@@ -204,14 +212,14 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onBackToLanding, onCarous
               </div>
               <div className="flex items-center space-x-4">
                 <button
-                  onClick={onProfileSettings}
+                  onClick={handleProfileSettings}
                   className="flex items-center space-x-2 text-gray-400 hover:text-white transition-colors"
                 >
                   <Users className="w-4 h-4" />
                   <span>Profile</span>
                 </button>
                 <button
-                  onClick={onBackToLanding}
+                  onClick={handleBackToLanding}
                   className="flex items-center space-x-2 text-gray-400 hover:text-white transition-colors"
                 >
                   <ArrowLeft className="w-4 h-4" />
@@ -424,7 +432,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onBackToLanding, onCarous
                   
                   {item.type === 'carousel' && (
                     <button 
-                      onClick={() => onCarouselPreview(item.id)}
+                      onClick={() => handleCarouselPreview(item.id)}
                       className="flex items-center justify-center space-x-2 py-2 px-3 bg-magenta hover:bg-magenta/80 text-white rounded-lg font-medium text-sm transition-colors"
                     >
                       <Download className="w-4 h-4" />

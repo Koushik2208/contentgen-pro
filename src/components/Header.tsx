@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Menu, X, Zap } from 'lucide-react';
 
-interface HeaderProps {
-  onGetStarted?: () => void;
-}
-
-const Header: React.FC<HeaderProps> = ({ onGetStarted }) => {
+const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const navigate = useNavigate();
+
+  const handleGetStarted = () => {
+    navigate('/onboarding');
+  };
 
   return (
     <header className="sticky top-0 z-50 bg-charcoal/95 backdrop-blur-sm border-b border-medium-gray">
@@ -37,7 +39,7 @@ const Header: React.FC<HeaderProps> = ({ onGetStarted }) => {
               FAQ
             </a>
             <button 
-              onClick={onGetStarted}
+              onClick={handleGetStarted}
               className="bg-gradient-to-r from-electric-blue to-magenta text-white px-6 py-2 rounded-full font-semibold hover:shadow-lg hover:shadow-electric-blue/25 transition-all duration-300"
             >
               Get Started
@@ -70,7 +72,7 @@ const Header: React.FC<HeaderProps> = ({ onGetStarted }) => {
                 FAQ
               </a>
               <button 
-                onClick={onGetStarted}
+                onClick={handleGetStarted}
                 className="bg-gradient-to-r from-electric-blue to-magenta text-white px-6 py-2 rounded-full font-semibold w-full"
               >
                 Get Started
