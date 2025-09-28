@@ -86,25 +86,45 @@ const OnboardingPage = () => {
     setAuthState({ isLoading: true, error: null, mode: 'signin' });
     
     try {
-      // Check if Google provider is available
+      // Clear any existing errors
+      setAuthState(prev => ({ ...prev, error: null }));
+      
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/dashboard`
+          redirectTo: `${window.location.origin}/dashboard`,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          }
         }
       });
       
       if (error) {
-        // Handle specific Google provider error
-        if (error.message.includes('provider is not enabled') || error.message.includes('Unsupported provider')) {
-          throw new Error('Google sign-in is not configured yet. Please use email sign-in or contact support.');
+        console.error('Google OAuth Error:', error);
+        
+        // Handle different types of OAuth errors
+        if (error.message.includes('provider is not enabled') || 
+            error.message.includes('Unsupported provider')) {
+          throw new Error('Google sign-in is not enabled in this environment. Please use email sign-in instead.');
+        } else if (error.message.includes('Invalid redirect URL') || 
+                   error.message.includes('redirect_uri')) {
+          throw new Error('OAuth configuration issue. Please contact support or use email sign-in.');
+        } else if (error.message.includes('network') || 
+                   error.message.includes('connection')) {
+          throw new Error('Network connection issue. Please check your internet connection and try again.');
         }
         throw error;
       }
+      
+      // If we get here without error, the redirect should happen automatically
+      // Don't set loading to false as the page will redirect
+      
     } catch (error: any) {
+      console.error('OAuth Error Details:', error);
       setAuthState({ 
         isLoading: false, 
-        error: error.message || 'Failed to sign in with Google. Please try email sign-in instead.', 
+        error: error.message || 'Failed to sign in with Google. Please check your connection and try again, or use email sign-in instead.', 
         mode: 'signin' 
       });
     }
@@ -418,12 +438,25 @@ const OnboardingPage = () => {
                     )}
                     <span>Continue with Google</span>
                   </button>
-                  <p className="text-gray-400 text-sm mt-3">
-                    {authState.error && authState.error.includes('Google sign-in is not configured') 
-                      ? 'Google sign-in setup required - use email option below' 
-                      : 'Quick and secure sign in with your Google account'
-                    }
-                  </p>
+                  
+                  {/* Show different messages based on error state */}
+                  {authState.error && authState.error.includes('not enabled') ? (
+                    <p className="text-yellow-400 text-sm mt-3">
+                      ⚠️ Google sign-in needs configuration - use email option below
+                    </p>
+                  ) : authState.error && authState.error.includes('configuration') ? (
+                    <p className="text-yellow-400 text-sm mt-3">
+                      ⚠️ OAuth setup issue - use email option below
+                    </p>
+                  ) : authState.error && authState.error.includes('connection') ? (
+                    <p className="text-red-400 text-sm mt-3">
+                      🌐 Connection issue - check internet and try again
+                    </p>
+                  ) : (
+                    <p className="text-gray-400 text-sm mt-3">
+                      Quick and secure sign in with your Google account
+                    </p>
+                  )}
                 </div>
 
                 {/* Divider */}
@@ -438,11 +471,22 @@ const OnboardingPage = () => {
 
                 {/* Email/Password Toggle */}
                 <div className="text-center">
-                  {authState.error && authState.error.includes('Google sign-in is not configured') && (
-                    <div className="mb-4 p-3 bg-yellow-900/20 border border-yellow-500/30 rounded-lg">
-                      <p className="text-yellow-400 text-sm">
-                        💡 Google sign-in needs to be configured. Use email sign-in below to get started!
-                      </p>
+                  {authState.error && (
+                    <div className="mb-4 p-4 bg-red-900/20 border border-red-500/30 rounded-lg">
+                      <div className="flex items-start space-x-2">
+                        <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+                        <div>
+                          <p className="text-red-400 text-sm font-medium mb-1">Authentication Error</p>
+                          <p className="text-red-300 text-sm">{authState.error}</p>
+                          {authState.error.includes('connection') && (
+                            <div className="mt-2 text-xs text-red-300">
+                              <p>• Check your internet connection</p>
+                              <p>• Try refreshing the page</p>
+                              <p>• Use email sign-in as alternative</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   )}
                   <button
