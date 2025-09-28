@@ -43,7 +43,7 @@ function App() {
               .from('profiles')
               .select('*')
               .eq('id', session.user.id)
-              .single();
+              .maybeSingle();
             
             if (!profile) {
               // Create profile for new users
