@@ -159,7 +159,6 @@ const OnboardingPage = () => {
         if (data.user) {
           // Move to next step for profile completion
           setCurrentStep(1);
-          setAuthState({ isLoading: false, error: null, mode: 'signup' });
         }
       } else {
         const { data, error } = await supabase.auth.signInWithPassword({
@@ -191,6 +190,9 @@ const OnboardingPage = () => {
         error: errorMessage, 
         mode: authState.mode 
       });
+    } finally {
+      // Always reset loading state
+      setAuthState(prev => ({ ...prev, isLoading: false }));
     }
   };
 
@@ -295,8 +297,8 @@ const OnboardingPage = () => {
         error: 'Failed to save profile. Please try again.' 
       }));
     } finally {
-      setAuthState(prev => ({ ...prev, isLoading: true }));
-    }
+      // Always reset loading state
+      setAuthState(prev => ({ ...prev, isLoading: false }));
   };
 
   const handleBackToHome = () => {
@@ -428,7 +430,7 @@ const OnboardingPage = () => {
                 {/* Auth Mode Toggle */}
                 <div className="flex bg-charcoal rounded-lg p-1 mb-6">
                   <button
-                    onClick={() => setAuthState(prev => ({ ...prev, mode: 'signup', error: null }))}
+                    onClick={() => setAuthState(prev => ({ ...prev, mode: 'signup', error: null, isLoading: false }))}
                     className={`flex-1 py-3 px-4 rounded-md text-sm font-medium transition-colors ${
                       authState.mode === 'signup'
                         ? 'bg-electric-blue text-white'
@@ -438,7 +440,7 @@ const OnboardingPage = () => {
                     Sign Up
                   </button>
                   <button
-                    onClick={() => setAuthState(prev => ({ ...prev, mode: 'signin', error: null }))}
+                    onClick={() => setAuthState(prev => ({ ...prev, mode: 'signin', error: null, isLoading: false }))}
                     className={`flex-1 py-3 px-4 rounded-md text-sm font-medium transition-colors ${
                       authState.mode === 'signin'
                         ? 'bg-electric-blue text-white'
