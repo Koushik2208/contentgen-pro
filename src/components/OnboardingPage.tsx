@@ -299,6 +299,7 @@ const OnboardingPage = () => {
     } finally {
       // Always reset loading state
       setAuthState(prev => ({ ...prev, isLoading: false }));
+    }
   };
 
   const handleBackToHome = () => {
