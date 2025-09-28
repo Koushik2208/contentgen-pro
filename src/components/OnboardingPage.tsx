@@ -86,18 +86,25 @@ const OnboardingPage = () => {
     setAuthState({ isLoading: true, error: null, mode: 'signin' });
     
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
+      // Check if Google provider is available
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: `${window.location.origin}/dashboard`
         }
       });
       
-      if (error) throw error;
+      if (error) {
+        // Handle specific Google provider error
+        if (error.message.includes('provider is not enabled') || error.message.includes('Unsupported provider')) {
+          throw new Error('Google sign-in is not configured yet. Please use email sign-in or contact support.');
+        }
+        throw error;
+      }
     } catch (error: any) {
       setAuthState({ 
         isLoading: false, 
-        error: error.message || 'Failed to sign in with Google', 
+        error: error.message || 'Failed to sign in with Google. Please try email sign-in instead.', 
         mode: 'signin' 
       });
     }
@@ -397,7 +404,7 @@ const OnboardingPage = () => {
                   <button
                     onClick={handleGoogleSignIn}
                     disabled={authState.isLoading}
-                    className="w-full bg-white hover:bg-gray-100 text-gray-900 font-semibold py-4 px-8 rounded-2xl text-lg transition-all duration-300 hover:shadow-xl hover:shadow-white/10 flex items-center justify-center space-x-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full bg-white hover:bg-gray-100 text-gray-900 font-semibold py-4 px-8 rounded-2xl text-lg transition-all duration-300 hover:shadow-xl hover:shadow-white/10 flex items-center justify-center space-x-3 disabled:opacity-50 disabled:cursor-not-allowed relative"
                   >
                     {authState.isLoading && authState.mode === 'signin' ? (
                       <div className="w-6 h-6 border-2 border-gray-900 border-t-transparent rounded-full animate-spin"></div>
@@ -412,7 +419,10 @@ const OnboardingPage = () => {
                     <span>Continue with Google</span>
                   </button>
                   <p className="text-gray-400 text-sm mt-3">
-                    Quick and secure sign in with your Google account
+                    {authState.error && authState.error.includes('Google sign-in is not configured') 
+                      ? 'Google sign-in setup required - use email option below' 
+                      : 'Quick and secure sign in with your Google account'
+                    }
                   </p>
                 </div>
 
@@ -428,11 +438,18 @@ const OnboardingPage = () => {
 
                 {/* Email/Password Toggle */}
                 <div className="text-center">
+                  {authState.error && authState.error.includes('Google sign-in is not configured') && (
+                    <div className="mb-4 p-3 bg-yellow-900/20 border border-yellow-500/30 rounded-lg">
+                      <p className="text-yellow-400 text-sm">
+                        💡 Google sign-in needs to be configured. Use email sign-in below to get started!
+                      </p>
+                    </div>
+                  )}
                   <button
                     onClick={() => setShowAuthForm(!showAuthForm)}
                     className="text-electric-blue hover:text-magenta transition-colors font-medium"
                   >
-                    {showAuthForm ? 'Hide email sign in' : 'Sign in with email instead'}
+                    {showAuthForm ? 'Hide email sign in' : 'Continue with email instead'}
                   </button>
                 </div>
 
