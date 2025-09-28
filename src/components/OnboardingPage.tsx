@@ -142,6 +142,7 @@ const OnboardingPage = () => {
     setErrors(newErrors);
     
     if (Object.keys(newErrors).length > 0) {
+      setAuthState(prev => ({ ...prev, isLoading: false }));
       return;
     }
 
@@ -171,6 +172,7 @@ const OnboardingPage = () => {
         if (error) throw error;
 
         if (data.user) {
+          setAuthState({ isLoading: false, error: null, mode: 'signin' });
           navigate('/dashboard');
         }
       }
