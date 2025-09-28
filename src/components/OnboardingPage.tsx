@@ -138,9 +138,6 @@ const OnboardingPage = () => {
     if (!formData.password.trim()) newErrors.password = 'Password is required';
     else if (formData.password.length < 6) newErrors.password = 'Password must be at least 6 characters';
     
-    if (authState.mode === 'signup' && !formData.name.trim()) {
-      newErrors.name = 'Name is required for sign up';
-    }
 
     setErrors(newErrors);
     
@@ -155,35 +152,11 @@ const OnboardingPage = () => {
         const { data, error } = await supabase.auth.signUp({
           email: formData.email,
           password: formData.password,
-          options: {
-            data: {
-              name: formData.name
-            }
-          }
         });
 
         if (error) throw error;
 
         if (data.user) {
-          // Create profile record
-          try {
-            const { error: profileError } = await supabase
-              .from('profiles')
-              .insert({
-                id: data.user.id,
-                email: formData.email,
-                name: formData.name
-              });
-
-            if (profileError) {
-              console.error('Profile creation error:', profileError);
-              // Don't throw error, just log it - user can still proceed
-            }
-          } catch (profileErr) {
-            console.error('Profile creation failed:', profileErr);
-            // Continue anyway - profile can be created later
-          }
-
           // Move to next step for profile completion
           setCurrentStep(1);
           setAuthState({ isLoading: false, error: null, mode: 'signup' });
@@ -268,15 +241,36 @@ const OnboardingPage = () => {
   };
 
   const handleSubmit = async () => {
+    setAuthState(prev => ({ ...prev, isLoading: true }));
+    
     try {
       const { data: { user } } = await supabase.auth.getUser();
       
       if (user) {
-        try {
-          // First try to update existing profile
+        // Create or update profile with all collected data
+        const profileData = {
+          id: user.id,
+          email: user.email || formData.email,
+          name: formData.name,
+          profession: formData.profession,
+          custom_profession: formData.profession === 'Other (specify)' ? formData.customProfession : null,
+          goals: formData.goals,
+          tone: formData.tone,
+          content_pillars: [], // Initialize empty, can be set later
+          updated_at: new Date().toISOString()
+        };
+
+        // Try to insert first (for new users)
+        const { error: insertError } = await supabase
+          .from('profiles')
+          .insert(profileData);
+
+        if (insertError) {
+          // If insert fails (user exists), try update
           const { error: updateError } = await supabase
             .from('profiles')
             .update({
+              name: formData.name,
               profession: formData.profession,
               custom_profession: formData.profession === 'Other (specify)' ? formData.customProfession : null,
               goals: formData.goals,
@@ -286,34 +280,22 @@ const OnboardingPage = () => {
             .eq('id', user.id);
 
           if (updateError) {
-            // If update fails, try to create the profile
-            const { error: insertError } = await supabase
-              .from('profiles')
-              .insert({
-                id: user.id,
-                email: user.email || formData.email,
-                name: formData.name,
-                profession: formData.profession,
-                custom_profession: formData.profession === 'Other (specify)' ? formData.customProfession : null,
-                goals: formData.goals,
-                tone: formData.tone
-              });
-
-            if (insertError) {
-              console.error('Profile creation error:', insertError);
-            }
+            console.error('Profile update error:', updateError);
+            throw new Error('Failed to save profile data');
           }
-        } catch (profileError) {
-          console.error('Profile operation failed:', profileError);
-          // Continue to dashboard anyway
         }
       }
 
       navigate('/dashboard');
     } catch (error) {
-      console.error('Submit error:', error);
-      // Navigate to dashboard anyway - user can complete profile later
-      navigate('/dashboard');
+      console.error('Profile submission error:', error);
+      setAuthState(prev => ({ 
+        ...prev, 
+        isLoading: false, 
+        error: 'Failed to save profile. Please try again.' 
+      }));
+    } finally {
+      setAuthState(prev => ({ ...prev, isLoading: true }));
     }
   };
 
@@ -468,26 +450,6 @@ const OnboardingPage = () => {
                 </div>
 
                 {/* Name Field (Sign Up Only) */}
-                {authState.mode === 'signup' && (
-                  <div className="mb-6">
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Full Name *
-                    </label>
-                    <div className="relative">
-                      <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                      <input
-                        type="text"
-                        value={formData.name}
-                        onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                        className={`w-full pl-10 pr-4 py-3 bg-charcoal border rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-electric-blue transition-colors ${
-                          errors.name ? 'border-red-500' : 'border-gray-600 focus:border-electric-blue'
-                        }`}
-                        placeholder="Enter your full name"
-                      />
-                    </div>
-                    {errors.name && <p className="text-red-400 text-sm mt-1">{errors.name}</p>}
-                  </div>
-                )}
 
                 {/* Email Field */}
                 <div className="mb-6">
@@ -601,7 +563,7 @@ const OnboardingPage = () => {
                   <select
                     value={formData.profession}
                     onChange={(e) => setFormData(prev => ({ ...prev, profession: e.target.value }))}
-                    className={`w-full px-4 py-3 bg-charcoal border rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-electric-blue transition-colors ${
+                    className={`w-full px-4 py-3 bg-charcoal border rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-electric-blue transition-colors ${
                       errors.profession ? 'border-red-500' : 'border-gray-600 focus:border-electric-blue'
                     }`}
                   >
@@ -725,12 +687,16 @@ const OnboardingPage = () => {
 
                 <button
                   onClick={handleNext}
-                  className="flex items-center space-x-2 bg-gradient-to-r from-electric-blue to-magenta text-white px-6 py-3 rounded-full font-semibold hover:shadow-lg hover:shadow-electric-blue/25 transition-all duration-300"
+                  disabled={authState.isLoading}
+                  className="flex items-center space-x-2 bg-gradient-to-r from-electric-blue to-magenta text-white px-6 py-3 rounded-full font-semibold hover:shadow-lg hover:shadow-electric-blue/25 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
+                  {authState.isLoading && currentStep === 3 ? (
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  ) : null}
                   <span>
                     {currentStep === 3 ? 'Complete Setup' : 'Continue'}
                   </span>
-                  <ArrowRight className="w-4 h-4" />
+                  {!authState.isLoading && <ArrowRight className="w-4 h-4" />}
                 </button>
               </div>
             )}
@@ -738,6 +704,11 @@ const OnboardingPage = () => {
             {/* Progress Text - Only show after auth */}
             {currentStep > 0 && (
               <div className="text-center mt-6">
+                {authState.error && currentStep === 3 && (
+                  <div className="mb-4 p-3 bg-red-900/20 border border-red-500/30 rounded-lg">
+                    <p className="text-red-400 text-sm">{authState.error}</p>
+                  </div>
+                )}
                 <p className="text-gray-400">
                   Step {currentStep} of 3 • Takes less than 2 minutes
                 </p>
