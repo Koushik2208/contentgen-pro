@@ -166,18 +166,22 @@ const OnboardingPage = () => {
 
         if (data.user) {
           // Create profile record
-          const { error: profileError } = await supabase
-            .from('profiles')
-            .insert({
-              id: data.user.id,
-              email: formData.email,
-              name: formData.name,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            });
+          try {
+            const { error: profileError } = await supabase
+              .from('profiles')
+              .insert({
+                id: data.user.id,
+                email: formData.email,
+                name: formData.name
+              });
 
-          if (profileError) {
-            console.error('Profile creation error:', profileError);
+            if (profileError) {
+              console.error('Profile creation error:', profileError);
+              // Don't throw error, just log it - user can still proceed
+            }
+          } catch (profileErr) {
+            console.error('Profile creation failed:', profileErr);
+            // Continue anyway - profile can be created later
           }
 
           // Move to next step for profile completion
@@ -268,27 +272,48 @@ const OnboardingPage = () => {
       const { data: { user } } = await supabase.auth.getUser();
       
       if (user) {
-        // Update profile with onboarding data
-        const { error } = await supabase
-          .from('profiles')
-          .update({
-            profession: formData.profession,
-            custom_profession: formData.profession === 'Other (specify)' ? formData.customProfession : null,
-            goals: formData.goals,
-            tone: formData.tone,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', user.id);
+        try {
+          // First try to update existing profile
+          const { error: updateError } = await supabase
+            .from('profiles')
+            .update({
+              profession: formData.profession,
+              custom_profession: formData.profession === 'Other (specify)' ? formData.customProfession : null,
+              goals: formData.goals,
+              tone: formData.tone,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', user.id);
 
-        if (error) {
-          console.error('Profile update error:', error);
+          if (updateError) {
+            // If update fails, try to create the profile
+            const { error: insertError } = await supabase
+              .from('profiles')
+              .insert({
+                id: user.id,
+                email: user.email || formData.email,
+                name: formData.name,
+                profession: formData.profession,
+                custom_profession: formData.profession === 'Other (specify)' ? formData.customProfession : null,
+                goals: formData.goals,
+                tone: formData.tone
+              });
+
+            if (insertError) {
+              console.error('Profile creation error:', insertError);
+            }
+          }
+        } catch (profileError) {
+          console.error('Profile operation failed:', profileError);
+          // Continue to dashboard anyway
         }
       }
 
       navigate('/dashboard');
     } catch (error) {
       console.error('Submit error:', error);
-      navigate('/dashboard'); // Navigate anyway
+      // Navigate to dashboard anyway - user can complete profile later
+      navigate('/dashboard');
     }
   };
 
