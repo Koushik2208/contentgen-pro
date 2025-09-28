@@ -138,10 +138,10 @@ const OnboardingPage = () => {
     if (!formData.password.trim()) newErrors.password = 'Password is required';
     else if (formData.password.length < 6) newErrors.password = 'Password must be at least 6 characters';
     
-
     setErrors(newErrors);
     
     if (Object.keys(newErrors).length > 0) {
+      setAuthState(prev => ({ ...prev, isLoading: false }));
       return;
     }
 
@@ -158,6 +158,7 @@ const OnboardingPage = () => {
 
         if (data.user) {
           // Move to next step for profile completion
+          setAuthState(prev => ({ ...prev, isLoading: false }));
           setCurrentStep(1);
         }
       } else {
@@ -175,6 +176,8 @@ const OnboardingPage = () => {
             .select('*')
             .eq('id', data.user.id)
             .single();
+          
+          setAuthState(prev => ({ ...prev, isLoading: false }));
           
           if (profile && profile.name && profile.profession && profile.goals && profile.tone) {
             // Profile is complete, go to dashboard
@@ -197,6 +200,7 @@ const OnboardingPage = () => {
         }
       }
     } catch (error: any) {
+      console.error('Authentication error:', error);
       let errorMessage = 'Authentication failed';
       
       if (error.message.includes('Invalid login credentials')) {
@@ -214,9 +218,6 @@ const OnboardingPage = () => {
         error: errorMessage, 
         mode: authState.mode 
       });
-    } finally {
-      // Always reset loading state
-      setAuthState(prev => ({ ...prev, isLoading: false }));
     }
   };
 
