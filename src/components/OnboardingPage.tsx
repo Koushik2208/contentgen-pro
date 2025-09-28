@@ -169,7 +169,31 @@ const OnboardingPage = () => {
         if (error) throw error;
 
         if (data.user) {
-          navigate('/dashboard');
+          // Check if user has completed profile
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', data.user.id)
+            .single();
+          
+          if (profile && profile.name && profile.profession && profile.goals && profile.tone) {
+            // Profile is complete, go to dashboard
+            navigate('/dashboard');
+          } else {
+            // Profile incomplete, continue with onboarding
+            if (profile) {
+              // Pre-fill form with existing data
+              setFormData(prev => ({
+                ...prev,
+                name: profile.name || '',
+                profession: profile.profession || '',
+                customProfession: profile.custom_profession || '',
+                goals: profile.goals || [],
+                tone: profile.tone || ''
+              }));
+            }
+            setCurrentStep(1);
+          }
         }
       }
     } catch (error: any) {
