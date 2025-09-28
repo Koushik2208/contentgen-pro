@@ -194,6 +194,9 @@ const OnboardingPage = () => {
         error: errorMessage, 
         mode: authState.mode 
       });
+    } finally {
+      // Ensure loading state is always reset
+      setAuthState(prev => ({ ...prev, isLoading: false }));
     }
   };
 
