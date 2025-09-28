@@ -138,6 +138,9 @@ const OnboardingPage = () => {
     if (!formData.password.trim()) newErrors.password = 'Password is required';
     else if (formData.password.length < 6) newErrors.password = 'Password must be at least 6 characters';
     
+    if (authState.mode === 'signup' && !formData.name.trim()) {
+      newErrors.name = 'Name is required for sign up';
+    }
 
     setErrors(newErrors);
     
@@ -152,13 +155,36 @@ const OnboardingPage = () => {
         const { data, error } = await supabase.auth.signUp({
           email: formData.email,
           password: formData.password,
+          options: {
+            data: {
+              name: formData.name
+            }
+          }
         });
 
         if (error) throw error;
 
         if (data.user) {
+          // Create profile record
+          try {
+            const { error: profileError } = await supabase
+              .from('profiles')
+              .insert({
+                id: data.user.id,
+                email: formData.email,
+                name: formData.name
+              });
 
-          // Move to next step to collect profile information
+            if (profileError) {
+              console.error('Profile creation error:', profileError);
+              // Don't throw error, just log it - user can still proceed
+            }
+          } catch (profileErr) {
+            console.error('Profile creation failed:', profileErr);
+            // Continue anyway - profile can be created later
+          }
+
+          // Move to next step for profile completion
           setCurrentStep(1);
           setAuthState({ isLoading: false, error: null, mode: 'signup' });
         }
@@ -242,54 +268,52 @@ const OnboardingPage = () => {
   };
 
   const handleSubmit = async () => {
-    setAuthState(prev => ({ ...prev, isLoading: true, error: null }));
-    
     try {
       const { data: { user } } = await supabase.auth.getUser();
       
       if (user) {
-        // Create complete profile with all collected data
-        const profileData = {
-          id: user.id,
-          email: user.email || formData.email,
-          name: formData.name,
-          profession: formData.profession,
-          custom_profession: formData.profession === 'Other (specify)' ? formData.customProfession : null,
-          goals: formData.goals,
-          tone: formData.tone,
-          content_pillars: [], // Initialize empty, can be set later
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        };
+        try {
+          // First try to update existing profile
+          const { error: updateError } = await supabase
+            .from('profiles')
+            .update({
+              profession: formData.profession,
+              custom_profession: formData.profession === 'Other (specify)' ? formData.customProfession : null,
+              goals: formData.goals,
+              tone: formData.tone,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', user.id);
 
-        // Use upsert to handle both insert and update cases
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .upsert(profileData, { 
-            onConflict: 'id',
-            ignoreDuplicates: false 
-          });
+          if (updateError) {
+            // If update fails, try to create the profile
+            const { error: insertError } = await supabase
+              .from('profiles')
+              .insert({
+                id: user.id,
+                email: user.email || formData.email,
+                name: formData.name,
+                profession: formData.profession,
+                custom_profession: formData.profession === 'Other (specify)' ? formData.customProfession : null,
+                goals: formData.goals,
+                tone: formData.tone
+              });
 
-        if (profileError) {
-          console.error('Profile creation/update error:', profileError);
-          setAuthState({ 
-            isLoading: false, 
-            error: 'Failed to save profile. Please try again.', 
-            mode: authState.mode 
-          });
-          return;
+            if (insertError) {
+              console.error('Profile creation error:', insertError);
+            }
+          }
+        } catch (profileError) {
+          console.error('Profile operation failed:', profileError);
+          // Continue to dashboard anyway
         }
       }
 
-      setAuthState({ isLoading: false, error: null, mode: authState.mode });
       navigate('/dashboard');
     } catch (error) {
-      console.error('Profile submission error:', error);
-      setAuthState({ 
-        isLoading: false, 
-        error: 'Failed to complete setup. Please try again.', 
-        mode: authState.mode 
-      });
+      console.error('Submit error:', error);
+      // Navigate to dashboard anyway - user can complete profile later
+      navigate('/dashboard');
     }
   };
 
@@ -444,6 +468,26 @@ const OnboardingPage = () => {
                 </div>
 
                 {/* Name Field (Sign Up Only) */}
+                {authState.mode === 'signup' && (
+                  <div className="mb-6">
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Full Name *
+                    </label>
+                    <div className="relative">
+                      <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <input
+                        type="text"
+                        value={formData.name}
+                        onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                        className={`w-full pl-10 pr-4 py-3 bg-charcoal border rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-electric-blue transition-colors ${
+                          errors.name ? 'border-red-500' : 'border-gray-600 focus:border-electric-blue'
+                        }`}
+                        placeholder="Enter your full name"
+                      />
+                    </div>
+                    {errors.name && <p className="text-red-400 text-sm mt-1">{errors.name}</p>}
+                  </div>
+                )}
 
                 {/* Email Field */}
                 <div className="mb-6">
@@ -518,7 +562,7 @@ const OnboardingPage = () => {
                 <div className="text-center mt-6">
                   <p className="text-gray-400 text-sm">
                     {authState.mode === 'signup' 
-                      ? 'Next: Complete your profile setup • By signing up, you agree to our Terms of Service and Privacy Policy'
+                      ? 'By signing up, you agree to our Terms of Service and Privacy Policy'
                       : 'Welcome back! Sign in to continue building your content'
                     }
                   </p>
@@ -681,12 +725,8 @@ const OnboardingPage = () => {
 
                 <button
                   onClick={handleNext}
-                  disabled={authState.isLoading}
-                  className="flex items-center space-x-2 bg-gradient-to-r from-electric-blue to-magenta text-white px-6 py-3 rounded-full font-semibold hover:shadow-lg hover:shadow-electric-blue/25 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex items-center space-x-2 bg-gradient-to-r from-electric-blue to-magenta text-white px-6 py-3 rounded-full font-semibold hover:shadow-lg hover:shadow-electric-blue/25 transition-all duration-300"
                 >
-                  {authState.isLoading && currentStep === 3 ? (
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  ) : null}
                   <span>
                     {currentStep === 3 ? 'Complete Setup' : 'Continue'}
                   </span>
