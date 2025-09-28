@@ -142,7 +142,6 @@ const OnboardingPage = () => {
     setErrors(newErrors);
     
     if (Object.keys(newErrors).length > 0) {
-      setAuthState(prev => ({ ...prev, isLoading: false }));
       return;
     }
 
@@ -172,7 +171,6 @@ const OnboardingPage = () => {
         if (error) throw error;
 
         if (data.user) {
-          setAuthState({ isLoading: false, error: null, mode: 'signin' });
           navigate('/dashboard');
         }
       }
@@ -194,9 +192,6 @@ const OnboardingPage = () => {
         error: errorMessage, 
         mode: authState.mode 
       });
-    } finally {
-      // Ensure loading state is always reset
-      setAuthState(prev => ({ ...prev, isLoading: false }));
     }
   };
 
@@ -427,7 +422,7 @@ const OnboardingPage = () => {
                 {/* Auth Mode Toggle */}
                 <div className="flex bg-charcoal rounded-lg p-1 mb-6">
                   <button
-                    onClick={() => setAuthState(prev => ({ ...prev, mode: 'signup', error: null, isLoading: false }))}
+                    onClick={() => setAuthState(prev => ({ ...prev, mode: 'signup', error: null }))}
                     className={`flex-1 py-3 px-4 rounded-md text-sm font-medium transition-colors ${
                       authState.mode === 'signup'
                         ? 'bg-electric-blue text-white'
@@ -437,7 +432,7 @@ const OnboardingPage = () => {
                     Sign Up
                   </button>
                   <button
-                    onClick={() => setAuthState(prev => ({ ...prev, mode: 'signin', error: null, isLoading: false }))}
+                    onClick={() => setAuthState(prev => ({ ...prev, mode: 'signin', error: null }))}
                     className={`flex-1 py-3 px-4 rounded-md text-sm font-medium transition-colors ${
                       authState.mode === 'signin'
                         ? 'bg-electric-blue text-white'
