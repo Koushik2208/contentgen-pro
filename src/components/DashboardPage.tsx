@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Zap, 
@@ -18,6 +19,7 @@ import {
   Target,
   MessageCircle
 } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 
 interface ContentCard {
   id: string;
@@ -235,7 +237,7 @@ const DashboardPage = () => {
           {/* Welcome Section */}
           <div className="mb-12 animate-fade-in-up">
             <h1 className="text-4xl sm:text-5xl font-bebas text-white mb-4">
-              Welcome Back, Sarah! 👋
+              Welcome Back, {userName}! 👋
             </h1>
             <p className="text-xl text-gray-300 mb-6">
               Your AI-generated content is ready. Choose what resonates with your brand and start building your authority.
