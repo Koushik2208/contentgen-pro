@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, Check, Zap, User, Briefcase, Target, Mail, Lock, Eye, EyeOff, AlertCircle } from 'lucide-react';
-import { supabase } from '../lib/supabase';
 
 interface FormData {
   name: string;
@@ -70,155 +69,25 @@ const OnboardingPage = () => {
   
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Check if user is already authenticated
-  useEffect(() => {
-    const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        navigate('/dashboard');
-      }
-    };
-    checkAuth();
-  }, [navigate]);
 
-  const handleGoogleSignIn = async () => {
-    setAuthState({ isLoading: true, error: null, mode: 'signin' });
-    
-    try {
-      // Clear any existing errors
-      setAuthState(prev => ({ ...prev, error: null }));
-      
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/dashboard`,
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'consent',
-          }
-        }
-      });
-      
-      if (error) {
-        console.error('Google OAuth Error:', error);
-        
-        // Handle different types of OAuth errors
-        if (error.message.includes('provider is not enabled') || 
-            error.message.includes('Unsupported provider')) {
-          throw new Error('Google sign-in is not enabled in this environment. Please use email sign-in instead.');
-        } else if (error.message.includes('Invalid redirect URL') || 
-                   error.message.includes('redirect_uri')) {
-          throw new Error('OAuth configuration issue. Please contact support or use email sign-in.');
-        } else if (error.message.includes('network') || 
-                   error.message.includes('connection')) {
-          throw new Error('Network connection issue. Please check your internet connection and try again.');
-        }
-        throw error;
-      }
-      
-      // If we get here without error, the redirect should happen automatically
-      // Don't set loading to false as the page will redirect
-      
-    } catch (error: any) {
-      console.error('OAuth Error Details:', error);
-      setAuthState({ 
-        isLoading: false, 
-        error: error.message || 'Failed to sign in with Google. Please check your connection and try again, or use email sign-in instead.', 
-        mode: 'signin' 
-      });
-    }
-  };
 
-  const handleEmailAuth = async () => {
+  const handleEmailAuth = () => {
     const newErrors: Record<string, string> = {};
-    
+
     if (!formData.email.trim()) newErrors.email = 'Email is required';
     else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = 'Please enter a valid email';
-    
+
     if (!formData.password.trim()) newErrors.password = 'Password is required';
     else if (formData.password.length < 6) newErrors.password = 'Password must be at least 6 characters';
-    
+
     setErrors(newErrors);
-    
+
     if (Object.keys(newErrors).length > 0) {
-      setAuthState(prev => ({ ...prev, isLoading: false }));
       return;
     }
 
-    setAuthState(prev => ({ ...prev, isLoading: true, error: null }));
-
-    try {
-      if (authState.mode === 'signup') {
-        const { data, error } = await supabase.auth.signUp({
-          email: formData.email,
-          password: formData.password,
-        });
-
-        if (error) throw error;
-
-        if (data.user) {
-          // Move to next step for profile completion
-          setAuthState(prev => ({ ...prev, isLoading: false }));
-          setCurrentStep(1);
-        }
-      } else {
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email: formData.email,
-          password: formData.password
-        });
-
-        if (error) throw error;
-
-        if (data.user) {
-          // Check if user has completed profile
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', data.user.id)
-            .single();
-          
-          setAuthState(prev => ({ ...prev, isLoading: false }));
-          
-          if (profile && profile.name && profile.profession && profile.goals && profile.tone) {
-            // Profile is complete, go to dashboard
-            navigate('/dashboard');
-          } else {
-            // Profile incomplete, continue with onboarding
-            if (profile) {
-              // Pre-fill form with existing data
-              setFormData(prev => ({
-                ...prev,
-                name: profile.name || '',
-                profession: profile.profession || '',
-                customProfession: profile.custom_profession || '',
-                goals: profile.goals || [],
-                tone: profile.tone || ''
-              }));
-            }
-            setCurrentStep(1);
-          }
-        }
-      }
-    } catch (error: any) {
-      console.error('Authentication error:', error);
-      let errorMessage = 'Authentication failed';
-      
-      if (error.message.includes('Invalid login credentials')) {
-        errorMessage = 'Invalid email or password';
-      } else if (error.message.includes('User already registered')) {
-        errorMessage = 'Account already exists. Try signing in instead.';
-      } else if (error.message.includes('Email not confirmed')) {
-        errorMessage = 'Please check your email and confirm your account';
-      } else if (error.message) {
-        errorMessage = error.message;
-      }
-
-      setAuthState({ 
-        isLoading: false, 
-        error: errorMessage, 
-        mode: authState.mode 
-      });
-    }
+    // Static demo - just move to next step
+    setCurrentStep(1);
   };
 
   const validateStep = (step: number): boolean => {
@@ -244,7 +113,7 @@ const OnboardingPage = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleNext = async () => {
+  const handleNext = () => {
     if (currentStep === 0) {
       // Auth step handled by separate functions
       return;
@@ -254,7 +123,7 @@ const OnboardingPage = () => {
       if (currentStep < 3) {
         setCurrentStep(currentStep + 1);
       } else {
-        await handleSubmit();
+        handleSubmit();
       }
     }
   };
@@ -267,64 +136,9 @@ const OnboardingPage = () => {
     }
   };
 
-  const handleSubmit = async () => {
-    setAuthState(prev => ({ ...prev, isLoading: true }));
-    
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (user) {
-        // Create or update profile with all collected data
-        const profileData = {
-          id: user.id,
-          email: user.email || formData.email,
-          name: formData.name,
-          profession: formData.profession,
-          custom_profession: formData.profession === 'Other (specify)' ? formData.customProfession : null,
-          goals: formData.goals,
-          tone: formData.tone,
-          content_pillars: [], // Initialize empty, can be set later
-          updated_at: new Date().toISOString()
-        };
-
-        // Try to insert first (for new users)
-        const { error: insertError } = await supabase
-          .from('profiles')
-          .insert(profileData);
-
-        if (insertError) {
-          // If insert fails (user exists), try update
-          const { error: updateError } = await supabase
-            .from('profiles')
-            .update({
-              name: formData.name,
-              profession: formData.profession,
-              custom_profession: formData.profession === 'Other (specify)' ? formData.customProfession : null,
-              goals: formData.goals,
-              tone: formData.tone,
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', user.id);
-
-          if (updateError) {
-            console.error('Profile update error:', updateError);
-            throw new Error('Failed to save profile data');
-          }
-        }
-      }
-
-      navigate('/dashboard');
-    } catch (error) {
-      console.error('Profile submission error:', error);
-      setAuthState(prev => ({ 
-        ...prev, 
-        isLoading: false, 
-        error: 'Failed to save profile. Please try again.' 
-      }));
-    } finally {
-      // Always reset loading state
-      setAuthState(prev => ({ ...prev, isLoading: false }));
-    }
+  const handleSubmit = () => {
+    // Static demo - just navigate to dashboard
+    navigate('/dashboard');
   };
 
   const handleBackToHome = () => {

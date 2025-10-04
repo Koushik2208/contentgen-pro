@@ -1,7 +1,5 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { useEffect } from 'react';
-import { supabase } from './lib/supabase';
 import Header from './components/Header';
 import HeroSection from './components/HeroSection';
 import BenefitsSection from './components/BenefitsSection';
@@ -32,42 +30,6 @@ const LandingPage = () => {
 };
 
 function App() {
-  // Handle OAuth callback
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (event === 'SIGNED_IN' && session) {
-          try {
-            // Check if user has a profile
-            const { data: profile } = await supabase
-              .from('profiles')
-              .select('*')
-              .eq('id', session.user.id)
-              .single();
-            
-            if (!profile) {
-              // Create profile for new users
-              const { error: profileError } = await supabase
-                .from('profiles')
-                .insert({
-                  id: session.user.id,
-                  email: session.user.email || '',
-                  name: session.user.user_metadata?.full_name || session.user.user_metadata?.name || ''
-                });
-
-              if (profileError) {
-                console.error('Auto profile creation failed:', profileError);
-              }
-            }
-          } catch (error) {
-            console.error('Profile check/creation failed:', error);
-          }
-        }
-      }
-    );
-
-    return () => subscription.unsubscribe();
-  }, []);
 
   return (
     <Routes>
