@@ -1,0 +1,79 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Button Components */
+@layer components {
+  .btn-primary {
+    @apply bg-gradient-to-r from-electric-blue to-magenta text-white rounded-full font-semibold hover:shadow-lg hover:shadow-electric-blue/25 transition-all duration-300;
+  }
+  
+  .btn-primary-sm {
+    @apply btn-primary px-6 py-2;
+  }
+  
+  .btn-primary-md {
+    @apply btn-primary px-8 py-4 text-lg;
+  }
+  
+  .btn-secondary {
+    @apply border border-gray-600 text-gray-300 rounded-full font-semibold hover:border-electric-blue hover:text-electric-blue transition-colors;
+  }
+  
+  .btn-secondary-sm {
+    @apply btn-secondary px-6 py-2;
+  }
+  
+  .btn-secondary-md {
+    @apply btn-secondary px-8 py-4 text-lg;
+  }
+}
+
+/* Card Components */
+@layer components {
+  .card-base {
+    @apply bg-medium-gray rounded-2xl border border-gray-700;
+  }
+  
+  .card-hover {
+    @apply card-base hover:border-electric-blue/50 hover:shadow-xl hover:shadow-electric-blue/10 transition-all duration-300;
+  }
+  
+  .card-stats {
+    @apply card-base p-6;
+  }
+}
+
+/* Layout Components */
+@layer components {
+  .container-main {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+  
+  .section-padding {
+    @apply py-20;
+  }
+  
+  .background-effects {
+    @apply absolute inset-0;
+  }
+  
+  .background-blur-blue {
+    @apply absolute top-20 left-10 w-72 h-72 bg-electric-blue/10 rounded-full blur-3xl;
+  }
+  
+  .background-blur-magenta {
+    @apply absolute bottom-20 right-10 w-96 h-96 bg-magenta/10 rounded-full blur-3xl;
+  }
+}
+
+/* Form Components */
+@layer components {
+  .input-base {
+    @apply w-full px-4 py-3 bg-medium-gray border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-electric-blue focus:border-electric-blue transition-colors;
+  }
+  
+  .select-base {
+    @apply px-4 py-3 bg-medium-gray border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-electric-blue focus:border-electric-blue transition-colors;
+  }
+}

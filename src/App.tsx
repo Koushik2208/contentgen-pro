@@ -1,5 +1,6 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Header from './components/Header';
 import HeroSection from './components/HeroSection';
 import BenefitsSection from './components/BenefitsSection';
@@ -29,28 +30,52 @@ const LandingPage = () => {
   );
 };
 
-function App() {
+// Protected Route Component
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user, loading, hasCompletedOnboarding } = useAuth();
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-charcoal flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-electric-blue mx-auto mb-4"></div>
+          <p className="text-gray-400">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Navigate to="/" replace />;
+  }
+
+  // If user is authenticated but hasn't completed onboarding, redirect to onboarding
+  if (!hasCompletedOnboarding) {
+    return <Navigate to="/onboarding" replace />;
+  }
+
+  return <>{children}</>;
+};
+
+function App() {
   return (
-    <Routes>
-      {/* Landing Page */}
-      <Route path="/" element={<LandingPage />} />
-      
-      {/* Onboarding */}
-      <Route path="/onboarding" element={<OnboardingPage />} />
-      
-      {/* Dashboard */}
-      <Route path="/dashboard" element={<DashboardPage />} />
-      
-      {/* Carousel Preview */}
-      <Route path="/carousel/:carouselId" element={<CarouselPreviewPage />} />
-      
-      {/* Profile Settings */}
-      <Route path="/profile" element={<ProfileSettingsPage />} />
-      
-      {/* Redirect any unknown routes to landing page */}
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+    <AuthProvider>
+      <Routes>
+        {/* Landing Page */}
+        <Route path="/" element={<LandingPage />} />
+        
+        {/* Onboarding */}
+        <Route path="/onboarding" element={<OnboardingPage />} />
+        
+        {/* Protected Routes */}
+        <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+        <Route path="/carousel/:carouselId" element={<ProtectedRoute><CarouselPreviewPage /></ProtectedRoute>} />
+        <Route path="/profile" element={<ProtectedRoute><ProfileSettingsPage /></ProtectedRoute>} />
+        
+        {/* Redirect any unknown routes to landing page */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </AuthProvider>
   );
 }
 

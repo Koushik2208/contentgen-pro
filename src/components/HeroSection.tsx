@@ -75,11 +75,11 @@ const HeroSection = () => {
             <div className="flex flex-col sm:flex-row gap-4">
               <button 
                 onClick={handleGetStarted}
-                className="bg-gradient-to-r from-electric-blue to-magenta text-white px-8 py-4 rounded-full font-semibold text-lg hover:shadow-lg hover:shadow-electric-blue/25 transition-all duration-300 animate-pulse-glow"
+                className="btn-primary-md animate-pulse-glow"
               >
                 Start Creating Content
               </button>
-              <button className="flex items-center justify-center space-x-2 border border-gray-600 text-gray-300 px-8 py-4 rounded-full font-semibold text-lg hover:border-electric-blue hover:text-electric-blue transition-colors">
+              <button className="btn-secondary-md flex items-center justify-center space-x-2">
                 <Play className="w-5 h-5" />
                 <span>Watch Demo (2 min)</span>
               </button>

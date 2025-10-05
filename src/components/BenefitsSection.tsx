@@ -1,5 +1,5 @@
-import React from 'react';
 import { Clock, Target, TrendingUp, Zap, Users, Shield } from 'lucide-react';
+import { ANIMATION_DELAYS } from '../constants';
 
 const benefits = [
   {
@@ -66,7 +66,7 @@ const BenefitsSection = () => {
               <div 
                 key={index} 
                 className="group bg-medium-gray rounded-2xl p-8 hover:bg-gradient-to-br hover:from-medium-gray hover:to-charcoal transition-all duration-300 hover:shadow-xl hover:shadow-electric-blue/10 animate-fade-in-up border border-gray-700"
-                style={{ animationDelay: `${index * 100}ms` }}
+                style={{ animationDelay: `${index * ANIMATION_DELAYS.STAGGER}ms` }}
               >
                 <div className="flex items-start space-x-4">
                   <div className={`p-3 rounded-lg bg-charcoal group-hover:scale-110 transition-transform duration-300`}>
@@ -88,7 +88,7 @@ const BenefitsSection = () => {
 
         {/* Bottom CTA */}
         <div className="text-center mt-16 animate-fade-in-up">
-          <button className="bg-gradient-to-r from-electric-blue to-magenta text-white px-8 py-4 rounded-full font-semibold text-lg hover:shadow-lg hover:shadow-electric-blue/25 transition-all duration-300">
+          <button className="btn-primary-md">
             Start Your Free Trial
           </button>
           <p className="text-gray-400 mt-4">Join 10,000+ professionals already growing their brands</p>

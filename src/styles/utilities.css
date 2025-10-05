@@ -1,0 +1,17 @@
+@layer utilities {
+  .text-gradient-primary {
+    @apply bg-gradient-to-r from-electric-blue to-magenta bg-clip-text text-transparent;
+  }
+  
+  .bg-gradient-primary {
+    @apply bg-gradient-to-r from-electric-blue to-magenta;
+  }
+  
+  .shadow-primary {
+    @apply shadow-lg shadow-electric-blue/25;
+  }
+  
+  .border-primary {
+    @apply border-electric-blue/50;
+  }
+}

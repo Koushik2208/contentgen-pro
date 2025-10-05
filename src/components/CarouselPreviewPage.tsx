@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, Download, Zap, ChevronLeft, ChevronRight, Grid3x3 as Grid3X3, Palette, Type, Sparkles } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
 interface CarouselSlide {
   id: number;
@@ -126,6 +127,31 @@ const CarouselPreviewPage = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const navigate = useNavigate();
   const { carouselId } = useParams<{ carouselId: string }>();
+  const { user, loading } = useAuth();
+
+  // Redirect to onboarding if not authenticated
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate('/onboarding');
+    }
+  }, [user, loading, navigate]);
+
+  // Show loading while checking authentication
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-charcoal flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-electric-blue mx-auto mb-4"></div>
+          <p className="text-gray-400">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Don't render if not authenticated (will redirect)
+  if (!user) {
+    return null;
+  }
   const [showThumbnails, setShowThumbnails] = useState(false);
   const [customization, setCustomization] = useState({
     backgroundColor: 'default',
@@ -141,7 +167,7 @@ const CarouselPreviewPage = () => {
         <div className="text-center">
           <h1 className="text-2xl font-bebas text-white mb-4">Carousel Not Found</h1>
           <button
-            onClick={handleBackToDashboard}
+            onClick={() => navigate('/dashboard')}
             className="bg-gradient-to-r from-electric-blue to-magenta text-white px-6 py-3 rounded-full font-semibold hover:shadow-lg hover:shadow-electric-blue/25 transition-all duration-300"
           >
             Back to Dashboard

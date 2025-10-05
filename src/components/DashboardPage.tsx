@@ -1,12 +1,13 @@
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import { useContent } from '../hooks/useContent';
 import { 
   Zap, 
   Copy, 
   Download, 
   Heart, 
   Search, 
-  Filter, 
   Plus, 
   ArrowLeft,
   Calendar,
@@ -18,129 +19,77 @@ import {
   Target,
   MessageCircle
 } from 'lucide-react';
-
-interface ContentCard {
-  id: string;
-  type: 'post' | 'carousel' | 'thread';
-  title: string;
-  content: string;
-  tone: string;
-  pillar: string;
-  engagement: {
-    likes: number;
-    comments: number;
-    shares: number;
-  };
-  createdAt: string;
-  isFavorited: boolean;
-  platform: string[];
-}
-
-const mockContent: ContentCard[] = [
-  {
-    id: '1',
-    type: 'post',
-    title: 'The Power of Authentic Leadership',
-    content: 'Authentic leadership isn\'t about being perfect—it\'s about being real. Here\'s what I\'ve learned after 10 years in management:\n\n✅ Vulnerability builds trust\n✅ Admitting mistakes shows strength\n✅ Listening creates connection\n\nYour team doesn\'t need a superhero. They need a human who cares about their growth and success.\n\nWhat\'s one leadership lesson that changed your perspective?',
-    tone: 'Professional',
-    pillar: 'Thought Leadership',
-    engagement: { likes: 247, comments: 32, shares: 18 },
-    createdAt: '2024-01-15',
-    isFavorited: true,
-    platform: ['LinkedIn', 'Twitter']
-  },
-  {
-    id: '2',
-    type: 'carousel',
-    title: '5 Content Creation Mistakes to Avoid',
-    content: 'Slide 1: Stop making these content mistakes that kill engagement\n\nSlide 2: Mistake #1 - Posting without a strategy\nSlide 3: Mistake #2 - Ignoring your audience\'s pain points\nSlide 4: Mistake #3 - Being too salesy too often\nSlide 5: Mistake #4 - Inconsistent posting schedule\nSlide 6: Mistake #5 - Not engaging with comments\n\nSlide 7: Ready to level up your content game?',
-    tone: 'Educational',
-    pillar: 'Tips & Advice',
-    engagement: { likes: 189, comments: 24, shares: 31 },
-    createdAt: '2024-01-14',
-    isFavorited: false,
-    platform: ['Instagram', 'LinkedIn']
-  },
-  {
-    id: '3',
-    type: 'thread',
-    title: 'My Journey from Employee to Entrepreneur',
-    content: '🧵 Thread: How I went from corporate employee to successful entrepreneur in 18 months\n\n1/ It started with a simple realization: I was trading time for money, but I wanted to build something that could scale beyond my hours.\n\n2/ The first step wasn\'t quitting my job—it was developing a skill that people would pay for outside of my 9-5.\n\n3/ I spent 6 months learning digital marketing in the evenings and weekends. Every free moment was invested in my future self.',
-    tone: 'Storytelling',
-    pillar: 'Personal Story',
-    engagement: { likes: 156, comments: 19, shares: 12 },
-    createdAt: '2024-01-13',
-    isFavorited: true,
-    platform: ['Twitter', 'LinkedIn']
-  },
-  {
-    id: '4',
-    type: 'post',
-    title: 'The ROI of Personal Branding',
-    content: 'Personal branding isn\'t vanity—it\'s strategy. Here\'s the ROI I\'ve seen from building my brand:\n\n📈 3x more inbound leads\n💰 40% higher consulting rates\n🤝 Access to exclusive opportunities\n🎯 Clearer ideal client attraction\n\nYour expertise is valuable. Your personal brand makes it visible.\n\nWhat\'s holding you back from sharing your knowledge?',
-    tone: 'Professional',
-    pillar: 'Business Growth',
-    engagement: { likes: 203, comments: 28, shares: 15 },
-    createdAt: '2024-01-12',
-    isFavorited: false,
-    platform: ['LinkedIn']
-  },
-  {
-    id: '5',
-    type: 'post',
-    title: 'Behind the Scenes: My Morning Routine',
-    content: 'You asked about my morning routine, so here it is (the real, unfiltered version):\n\n5:30 AM - Wake up (sometimes 5:45 if I\'m honest)\n6:00 AM - Coffee + journal for 10 minutes\n6:15 AM - Quick workout or walk\n7:00 AM - Review priorities for the day\n7:30 AM - Deep work block (no emails/social)\n\nThe secret? It\'s not perfect, but it\'s consistent 80% of the time.\n\nWhat\'s one morning habit that changed your life?',
-    tone: 'Casual',
-    pillar: 'Behind the Scenes',
-    engagement: { likes: 134, comments: 41, shares: 8 },
-    createdAt: '2024-01-11',
-    isFavorited: true,
-    platform: ['Instagram', 'LinkedIn']
-  },
-  {
-    id: '6',
-    type: 'carousel',
-    title: 'Content Pillars That Convert',
-    content: 'Slide 1: The 5 content pillars every personal brand needs\n\nSlide 2: Pillar 1 - Educational (Teach your expertise)\nSlide 3: Pillar 2 - Inspirational (Share your journey)\nSlide 4: Pillar 3 - Behind the Scenes (Show your process)\nSlide 5: Pillar 4 - Industry Insights (Share your perspective)\nSlide 6: Pillar 5 - Community (Engage your audience)\n\nSlide 7: Which pillar resonates most with your brand?',
-    tone: 'Educational',
-    pillar: 'Tips & Advice',
-    engagement: { likes: 278, comments: 35, shares: 22 },
-    createdAt: '2024-01-10',
-    isFavorited: false,
-    platform: ['Instagram', 'LinkedIn']
-  }
-];
-
-const contentPillars = [
-  'All Pillars',
-  'Thought Leadership',
-  'Tips & Advice',
-  'Personal Story',
-  'Business Growth',
-  'Behind the Scenes'
-];
-
-const toneFilters = [
-  'All Tones',
-  'Professional',
-  'Casual',
-  'Educational',
-  'Storytelling'
-];
+import { CONTENT_PILLARS, TONE_FILTERS, ANIMATION_DELAYS } from '../constants';
+import '../styles/components.css';
 
 const DashboardPage = () => {
-  const [content, setContent] = useState<ContentCard[]>(mockContent);
   const navigate = useNavigate();
+  const { user, loading: authLoading } = useAuth();
+  const { content, loading: contentLoading, error: contentError, toggleFavorite } = useContent();
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedPillar, setSelectedPillar] = useState('All Pillars');
   const [selectedTone, setSelectedTone] = useState('All Tones');
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
+  // Redirect to onboarding if not authenticated
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate('/onboarding');
+    }
+  }, [user, authLoading, navigate]);
+
+  // Show loading while checking authentication or loading content
+  if (authLoading || contentLoading) {
+    return (
+      <div className="min-h-screen bg-charcoal flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-electric-blue mx-auto mb-4"></div>
+          <p className="text-gray-400">Loading your content...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state if content loading failed
+  if (contentError) {
+    return (
+      <div className="min-h-screen bg-charcoal flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto px-4">
+          <div className="bg-red-900/20 border border-red-500/30 rounded-lg p-6 mb-4">
+            <h2 className="text-xl font-semibold text-red-400 mb-2">Database Connection Error</h2>
+            <p className="text-gray-300 mb-4">{contentError}</p>
+            <div className="text-left text-sm text-gray-400">
+              <p className="mb-2">To fix this issue:</p>
+              <ol className="list-decimal list-inside space-y-1">
+                <li>Go to your Supabase Dashboard</li>
+                <li>Run the SQL schema from database/schema.sql</li>
+                <li>Check your environment variables</li>
+                <li>Refresh this page</li>
+              </ol>
+            </div>
+          </div>
+          <button
+            onClick={() => window.location.reload()}
+            className="bg-electric-blue text-white px-4 py-2 rounded-lg hover:bg-electric-blue/80 transition-colors"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Don't render if not authenticated (will redirect)
+  if (!user) {
+    return null;
+  }
+
   const filteredContent = content.filter(item => {
     const matchesSearch = item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          item.content.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesPillar = selectedPillar === 'All Pillars' || item.pillar === selectedPillar;
-    const matchesTone = selectedTone === 'All Tones' || item.tone === selectedTone;
+    const matchesPillar = selectedPillar === CONTENT_PILLARS[0] || item.pillar === selectedPillar;
+    const matchesTone = selectedTone === TONE_FILTERS[0] || item.tone === selectedTone;
     
     return matchesSearch && matchesPillar && matchesTone;
   });
@@ -151,10 +100,8 @@ const DashboardPage = () => {
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  const handleToggleFavorite = (id: string) => {
-    setContent(prev => prev.map(item => 
-      item.id === id ? { ...item, isFavorited: !item.isFavorited } : item
-    ));
+  const handleToggleFavorite = async (id: string, currentFavorite: boolean) => {
+    await toggleFavorite(id, !currentFavorite);
   };
 
   const handleCarouselPreview = (carouselId: string) => {
@@ -235,7 +182,7 @@ const DashboardPage = () => {
           {/* Welcome Section */}
           <div className="mb-12 animate-fade-in-up">
             <h1 className="text-4xl sm:text-5xl font-bebas text-white mb-4">
-              Welcome Back, Sarah! 👋
+              Welcome Back, {user?.email?.split('@')[0] || 'User'}! 👋
             </h1>
             <p className="text-xl text-gray-300 mb-6">
               Your AI-generated content is ready. Choose what resonates with your brand and start building your authority.
@@ -293,7 +240,7 @@ const DashboardPage = () => {
           </div>
 
           {/* Filters and Search */}
-          <div className="mb-8 animate-fade-in-up" style={{ animationDelay: '200ms' }}>
+          <div className="mb-8 animate-fade-in-up" style={{ animationDelay: `${ANIMATION_DELAYS.FAST}ms` }}>
             <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
               {/* Search */}
               <div className="relative flex-1 max-w-md">
@@ -303,7 +250,7 @@ const DashboardPage = () => {
                   placeholder="Search content ideas..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 bg-medium-gray border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-electric-blue focus:border-electric-blue transition-colors"
+                  className="input-base pl-10 pr-4"
                 />
               </div>
 
@@ -312,9 +259,9 @@ const DashboardPage = () => {
                 <select
                   value={selectedPillar}
                   onChange={(e) => setSelectedPillar(e.target.value)}
-                  className="px-4 py-3 bg-medium-gray border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-electric-blue focus:border-electric-blue transition-colors"
+                  className="select-base"
                 >
-                  {contentPillars.map(pillar => (
+                  {CONTENT_PILLARS.map(pillar => (
                     <option key={pillar} value={pillar}>{pillar}</option>
                   ))}
                 </select>
@@ -322,14 +269,14 @@ const DashboardPage = () => {
                 <select
                   value={selectedTone}
                   onChange={(e) => setSelectedTone(e.target.value)}
-                  className="px-4 py-3 bg-medium-gray border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-electric-blue focus:border-electric-blue transition-colors"
+                  className="select-base"
                 >
-                  {toneFilters.map(tone => (
+                  {TONE_FILTERS.map(tone => (
                     <option key={tone} value={tone}>{tone}</option>
                   ))}
                 </select>
 
-                <button className="bg-gradient-to-r from-electric-blue to-magenta text-white px-6 py-3 rounded-lg font-semibold hover:shadow-lg hover:shadow-electric-blue/25 transition-all duration-300 flex items-center space-x-2">
+                <button className="btn-primary-sm flex items-center space-x-2">
                   <Plus className="w-5 h-5" />
                   <span>Generate More</span>
                 </button>
@@ -338,12 +285,12 @@ const DashboardPage = () => {
           </div>
 
           {/* Content Grid */}
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in-up" style={{ animationDelay: '400ms' }}>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in-up" style={{ animationDelay: `${ANIMATION_DELAYS.MEDIUM}ms` }}>
             {filteredContent.map((item, index) => (
               <div 
                 key={item.id}
                 className="bg-medium-gray rounded-2xl p-6 border border-gray-700 hover:border-electric-blue/50 transition-all duration-300 hover:shadow-xl hover:shadow-electric-blue/10 group"
-                style={{ animationDelay: `${600 + index * 100}ms` }}
+                style={{ animationDelay: `${ANIMATION_DELAYS.SLOW + index * ANIMATION_DELAYS.STAGGER}ms` }}
               >
                 {/* Card Header */}
                 <div className="flex items-start justify-between mb-4">
@@ -356,7 +303,7 @@ const DashboardPage = () => {
                   </div>
                   <div className="flex items-center space-x-2">
                     <button
-                      onClick={() => handleToggleFavorite(item.id)}
+                      onClick={() => handleToggleFavorite(item.id, item.isFavorited)}
                       className={`p-2 rounded-lg transition-colors ${
                         item.isFavorited 
                           ? 'bg-magenta/20 text-magenta' 
@@ -451,17 +398,20 @@ const DashboardPage = () => {
                 <Search className="w-16 h-16 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-xl font-semibold text-white mb-2">No content found</h3>
                 <p className="text-gray-400 mb-6">
-                  Try adjusting your search terms or filters to find more content ideas.
+                  {content.length === 0 
+                    ? "You haven't created any content yet. Generate your first content idea to get started!"
+                    : "Try adjusting your search terms or filters to find more content ideas."
+                  }
                 </p>
                 <button className="bg-gradient-to-r from-electric-blue to-magenta text-white px-6 py-3 rounded-full font-semibold hover:shadow-lg hover:shadow-electric-blue/25 transition-all duration-300">
-                  Generate New Content
+                  {content.length === 0 ? 'Generate Your First Content' : 'Generate New Content'}
                 </button>
               </div>
             </div>
           )}
 
           {/* Bottom Actions */}
-          <div className="mt-12 text-center animate-fade-in-up" style={{ animationDelay: '800ms' }}>
+          <div className="mt-12 text-center animate-fade-in-up" style={{ animationDelay: `${ANIMATION_DELAYS.VERY_SLOW}ms` }}>
             <div className="bg-gradient-to-r from-dark-gray to-medium-gray rounded-2xl p-8 border border-gray-700">
               <h3 className="text-2xl font-bebas text-white mb-4">
                 Ready for More Content Ideas?

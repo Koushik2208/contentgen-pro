@@ -1,0 +1,123 @@
+---
+alwaysApply: true
+---
+
+## 🧱 Core Principles
+
+* Write **clean, modular, and type-safe** code
+* Prefer **composition over inheritance**
+* Keep **logic reusable**, **UI consistent**, and **state predictable**
+* Prioritize **readability and maintainability** over shortcuts
+* Think **scalability** from the start — structure features, not files
+
+---
+
+## 📁 Folder Structure
+
+```bash
+src/
+  components/   → Reusable UI blocks
+  features/     → Feature-specific modules (auth, dashboard, etc.)
+  hooks/        → Reusable logic (useFetch, useToggle)
+  context/      → Global state or providers
+  store/        → Redux or app-level state
+  utils/        → Helpers, formatters
+  types/        → TypeScript definitions
+  styles/       → Global styles or Tailwind config
+```
+
+---
+
+## 🧩 Component Rules
+
+* Use **functional components** (`function MyComponent() {}`)
+* Define **props via interfaces**
+* Extract logic into **custom hooks**
+* Use **React.memo** for pure components
+* Keep components **focused** — one concern per file
+* Use **composition** (`children`) instead of prop drilling
+
+```tsx
+interface CardProps { title: string; children: React.ReactNode }
+export function Card({ title, children }: CardProps) {
+  return (
+    <div className='p-4 rounded-xl shadow-sm'>
+      <h2 className='text-lg font-semibold'>{title}</h2>
+      {children}
+    </div>
+  )
+}
+```
+
+---
+
+## ⚙️ Code Practices
+
+* Use **TypeScript strict mode**
+* Use **camelCase** for variables and functions
+* Use **PascalCase** for components and interfaces
+* Avoid abbreviations — use clear, descriptive names
+* Avoid inline functions and objects in JSX
+* Use **useCallback** and **useMemo** when necessary
+* Clean up effects with return functions
+* Limit component size (extract sub-components if >100 lines)
+
+---
+
+## 🧠 State Management
+
+* Local state → `useState`, `useReducer`
+* Shared state → `useContext` or Redux Toolkit
+* Avoid deeply nested state objects
+* Use **selectors** to read state
+* Keep state close to where it’s used
+
+---
+
+## 🔍 Error Handling
+
+* Wrap async logic in try/catch
+* Use **Error Boundaries** for runtime errors
+* Validate inputs before processing
+* Always handle loading and error states gracefully
+
+---
+
+## 🧪 Testing & Quality
+
+* Use **Jest + React Testing Library**
+* Test critical components and hooks
+* Use **ESLint** + **Prettier** for linting and formatting
+* Enforce commit hooks via **Husky + lint-staged**
+* Keep code reviews focused on clarity and reusability
+
+---
+
+## 🚀 Performance
+
+* Lazy-load routes and heavy components
+* Avoid unnecessary re-renders
+* Memoize callbacks and derived data
+* Optimize lists with keys and virtualization if needed
+* Use dev tools to profile bottlenecks
+
+---
+
+## 📘 Documentation
+
+* Write JSDoc or short comments for logic-heavy parts
+* Describe component props clearly
+* Keep README up-to-date with folder structure and conventions
+
+---
+
+## 🧠 Cursor Implementation Rule
+
+When generating code:
+
+* Use **TypeScript** + **functional components**
+* Follow this file structure and naming convention
+* Use **custom hooks** for reusable logic
+* Keep code **modular, clean, and scalable**
+* Use **Tailwind CSS** or plain CSS (no UI libraries)
+* Ensure **accessibility** and **performance awareness**

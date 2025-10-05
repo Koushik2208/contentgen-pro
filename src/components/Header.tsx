@@ -1,13 +1,32 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Menu, X, Zap } from 'lucide-react';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Menu, X, Zap, User, LogOut } from "lucide-react";
+import { useAuth } from "../contexts/AuthContext";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const navigate = useNavigate();
+  const { user, signOut } = useAuth();
 
   const handleGetStarted = () => {
-    navigate('/onboarding');
+    if (user) {
+      navigate("/dashboard");
+    } else {
+      navigate("/onboarding");
+    }
+  };
+
+  const handleSignIn = () => {
+    navigate("/onboarding");
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/");
+  };
+
+  const handleDashboard = () => {
+    navigate("/dashboard");
   };
 
   return (
@@ -26,24 +45,56 @@ const Header = () => {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
-            <a href="#benefits" className="text-gray-300 hover:text-electric-blue transition-colors">
+            <a
+              href="#benefits"
+              className="text-gray-300 hover:text-electric-blue transition-colors"
+            >
               Benefits
             </a>
-            <a href="#how-it-works" className="text-gray-300 hover:text-electric-blue transition-colors">
+            <a
+              href="#how-it-works"
+              className="text-gray-300 hover:text-electric-blue transition-colors"
+            >
               How It Works
             </a>
-            <a href="#testimonials" className="text-gray-300 hover:text-electric-blue transition-colors">
+            <a
+              href="#testimonials"
+              className="text-gray-300 hover:text-electric-blue transition-colors"
+            >
               Reviews
             </a>
-            <a href="#faq" className="text-gray-300 hover:text-electric-blue transition-colors">
+            <a
+              href="#faq"
+              className="text-gray-300 hover:text-electric-blue transition-colors"
+            >
               FAQ
             </a>
-            <button 
-              onClick={handleGetStarted}
-              className="bg-gradient-to-r from-electric-blue to-magenta text-white px-6 py-2 rounded-full font-semibold hover:shadow-lg hover:shadow-electric-blue/25 transition-all duration-300"
-            >
-              Get Started
-            </button>
+
+            {user ? (
+              <div className="flex items-center space-x-4">
+                <button
+                  onClick={handleDashboard}
+                  className="flex items-center space-x-2 text-gray-300 hover:text-electric-blue transition-colors"
+                >
+                  <User className="w-4 h-4" />
+                  <span>Dashboard</span>
+                </button>
+                <button
+                  onClick={handleSignOut}
+                  className="flex items-center space-x-2 text-gray-300 hover:text-red-400 transition-colors"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span>Sign Out</span>
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={handleGetStarted}
+                className="bg-gradient-to-r from-electric-blue to-magenta text-white px-6 py-2 rounded-full font-semibold hover:shadow-lg hover:shadow-electric-blue/25 transition-all duration-300"
+              >
+                Get Started
+              </button>
+            )}
           </nav>
 
           {/* Mobile Menu Button */}
@@ -51,7 +102,11 @@ const Header = () => {
             className="md:hidden text-white"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
           >
-            {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            {isMenuOpen ? (
+              <X className="w-6 h-6" />
+            ) : (
+              <Menu className="w-6 h-6" />
+            )}
           </button>
         </div>
 
@@ -59,24 +114,64 @@ const Header = () => {
         {isMenuOpen && (
           <div className="md:hidden py-4 border-t border-medium-gray">
             <nav className="flex flex-col space-y-4">
-              <a href="#benefits" className="text-gray-300 hover:text-electric-blue transition-colors">
+              <a
+                href="#benefits"
+                className="text-gray-300 hover:text-electric-blue transition-colors"
+              >
                 Benefits
               </a>
-              <a href="#how-it-works" className="text-gray-300 hover:text-electric-blue transition-colors">
+              <a
+                href="#how-it-works"
+                className="text-gray-300 hover:text-electric-blue transition-colors"
+              >
                 How It Works
               </a>
-              <a href="#testimonials" className="text-gray-300 hover:text-electric-blue transition-colors">
+              <a
+                href="#testimonials"
+                className="text-gray-300 hover:text-electric-blue transition-colors"
+              >
                 Reviews
               </a>
-              <a href="#faq" className="text-gray-300 hover:text-electric-blue transition-colors">
+              <a
+                href="#faq"
+                className="text-gray-300 hover:text-electric-blue transition-colors"
+              >
                 FAQ
               </a>
-              <button 
-                onClick={handleGetStarted}
-                className="bg-gradient-to-r from-electric-blue to-magenta text-white px-6 py-2 rounded-full font-semibold w-full"
-              >
-                Get Started
-              </button>
+
+              {user ? (
+                <>
+                  <button
+                    onClick={handleDashboard}
+                    className="flex items-center space-x-2 text-gray-300 hover:text-electric-blue transition-colors"
+                  >
+                    <User className="w-4 h-4" />
+                    <span>Dashboard</span>
+                  </button>
+                  <button
+                    onClick={handleSignOut}
+                    className="flex items-center space-x-2 text-gray-300 hover:text-red-400 transition-colors"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    <span>Sign Out</span>
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={handleSignIn}
+                    className="text-gray-300 hover:text-electric-blue transition-colors text-left"
+                  >
+                    Sign In
+                  </button>
+                  <button
+                    onClick={handleGetStarted}
+                    className="bg-gradient-to-r from-electric-blue to-magenta text-white px-6 py-2 rounded-full font-semibold hover:shadow-lg hover:shadow-electric-blue/25 transition-all duration-300 w-full"
+                  >
+                    Get Started
+                  </button>
+                </>
+              )}
             </nav>
           </div>
         )}
