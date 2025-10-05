@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, ArrowRight, Download, Zap, ChevronLeft, ChevronRight, Grid3x3 as Grid3X3, Palette, Type, Sparkles } from 'lucide-react';
+import { ArrowLeft, Download, Zap, ChevronLeft, ChevronRight, Grid3x3 as Grid3X3, Sparkles } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 interface CarouselSlide {
