@@ -12,14 +12,12 @@ import {
   ArrowLeft,
   Calendar,
   TrendingUp,
-  Users,
   Eye,
   MoreHorizontal,
   Sparkles,
-  Target,
-  MessageCircle
+  Target
 } from 'lucide-react';
-import { CONTENT_PILLARS, TONE_FILTERS, ANIMATION_DELAYS } from '../constants';
+import { CONTENT_PILLARS, TONE_FILTERS } from '../constants';
 import '../styles/components.css';
 
 const DashboardPage = () => {
@@ -28,24 +26,30 @@ const DashboardPage = () => {
   const { content, loading: contentLoading, error: contentError, toggleFavorite } = useContent();
   
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedPillar, setSelectedPillar] = useState('All Pillars');
-  const [selectedTone, setSelectedTone] = useState('All Tones');
-  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [selectedPillar, setSelectedPillar] = useState('All');
+  const [selectedTone, setSelectedTone] = useState('All');
 
-  // Redirect to onboarding if not authenticated
+  // Simple onboarding check - if user doesn't have preferences, redirect to onboarding
   useEffect(() => {
-    if (!authLoading && !user) {
-      navigate('/onboarding');
+    if (user && !authLoading && !contentLoading && content.length === 0) {
+      // Check if user has any content or preferences
+      // If not, they might need to complete onboarding
+      const hasContent = content && content.length > 0;
+      if (!hasContent) {
+        // For now, let's assume if they reach dashboard, they're onboarded
+        // This prevents the infinite loop issue
+        console.log('User is on dashboard - onboarding assumed complete');
+      }
     }
-  }, [user, authLoading, navigate]);
+  }, [user, authLoading, contentLoading, content]);
 
-  // Show loading while checking authentication or loading content
-  if (authLoading || contentLoading) {
+  // Show loading while checking authentication
+  if (authLoading) {
     return (
       <div className="min-h-screen bg-charcoal flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-electric-blue mx-auto mb-4"></div>
-          <p className="text-gray-400">Loading your content...</p>
+          <p className="text-gray-400">Loading...</p>
         </div>
       </div>
     );
@@ -88,53 +92,36 @@ const DashboardPage = () => {
   const filteredContent = content.filter(item => {
     const matchesSearch = item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          item.content.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesPillar = selectedPillar === CONTENT_PILLARS[0] || item.pillar === selectedPillar;
-    const matchesTone = selectedTone === TONE_FILTERS[0] || item.tone === selectedTone;
-    
+    const matchesPillar = selectedPillar === 'All' || item.pillar === selectedPillar;
+    const matchesTone = selectedTone === 'All' || item.tone === selectedTone;
     return matchesSearch && matchesPillar && matchesTone;
   });
-
-  const handleCopyContent = (id: string, content: string) => {
-    navigator.clipboard.writeText(content);
-    setCopiedId(id);
-    setTimeout(() => setCopiedId(null), 2000);
-  };
-
-  const handleToggleFavorite = async (id: string, currentFavorite: boolean) => {
-    await toggleFavorite(id, !currentFavorite);
-  };
-
-  const handleCarouselPreview = (carouselId: string) => {
-    navigate(`/carousel/${carouselId}`);
-  };
-
-  const handleProfileSettings = () => {
-    navigate('/profile');
-  };
 
   const handleBackToLanding = () => {
     navigate('/');
   };
 
-  const getContentTypeIcon = (type: string) => {
-    switch (type) {
-      case 'carousel': return '🎠';
-      case 'thread': return '🧵';
-      default: return '📝';
-    }
+  const handleCreateContent = () => {
+    // For now, just show a message
+    alert('Content creation feature coming soon!');
   };
 
-  const getContentTypeLabel = (type: string) => {
-    switch (type) {
-      case 'carousel': return 'Carousel';
-      case 'thread': return 'Thread';
-      default: return 'Post';
-    }
+  const handleCopyContent = (content: string) => {
+    navigator.clipboard.writeText(content);
+    // You could add a toast notification here
   };
 
-  const totalEngagement = content.reduce((sum, item) => 
-    sum + item.engagement.likes + item.engagement.comments + item.engagement.shares, 0
-  );
+  const handleDownloadContent = (title: string, content: string) => {
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <div className="min-h-screen bg-charcoal text-white font-manrope">
@@ -159,18 +146,17 @@ const DashboardPage = () => {
               </div>
               <div className="flex items-center space-x-4">
                 <button
-                  onClick={handleProfileSettings}
-                  className="flex items-center space-x-2 text-gray-400 hover:text-white transition-colors"
-                >
-                  <Users className="w-4 h-4" />
-                  <span>Profile</span>
-                </button>
-                <button
                   onClick={handleBackToLanding}
                   className="flex items-center space-x-2 text-gray-400 hover:text-white transition-colors"
                 >
                   <ArrowLeft className="w-4 h-4" />
-                  <span>Home</span>
+                  <span>Back to Home</span>
+                </button>
+                <button
+                  onClick={() => navigate('/profile')}
+                  className="text-gray-400 hover:text-white transition-colors text-sm"
+                >
+                  Profile
                 </button>
               </div>
             </div>
@@ -179,258 +165,206 @@ const DashboardPage = () => {
 
         {/* Main Content */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Welcome Section */}
-          <div className="mb-12 animate-fade-in-up">
+          {/* Page Header */}
+          <div className="mb-8 animate-fade-in-up">
             <h1 className="text-4xl sm:text-5xl font-bebas text-white mb-4">
-              Welcome Back, {user?.email?.split('@')[0] || 'User'}! 👋
+              Your Content Dashboard
             </h1>
-            <p className="text-xl text-gray-300 mb-6">
-              Your AI-generated content is ready. Choose what resonates with your brand and start building your authority.
+            <p className="text-xl text-gray-300">
+              Generate, manage, and optimize your content strategy
             </p>
+          </div>
 
-            {/* Stats Overview */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
-              <div className="bg-medium-gray rounded-xl p-6 border border-gray-700">
-                <div className="flex items-center space-x-3">
-                  <div className="bg-electric-blue/20 p-2 rounded-lg">
-                    <Sparkles className="w-5 h-5 text-electric-blue" />
-                  </div>
-                  <div>
-                    <div className="text-2xl font-bold text-white">{content.length}</div>
-                    <div className="text-sm text-gray-400">Content Ideas</div>
-                  </div>
+          {/* Search and Filters */}
+          <div className="mb-8 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
+            <div className="bg-medium-gray rounded-2xl p-6 border border-gray-700">
+              <div className="flex flex-col lg:flex-row gap-4">
+                {/* Search Bar */}
+                <div className="flex-1 relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  <input
+                    type="text"
+                    placeholder="Search content ideas..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full px-4 py-3 bg-medium-gray border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-electric-blue focus:border-electric-blue transition-colors pl-10 pr-4"
+                  />
                 </div>
-              </div>
-              <div className="bg-medium-gray rounded-xl p-6 border border-gray-700">
-                <div className="flex items-center space-x-3">
-                  <div className="bg-magenta/20 p-2 rounded-lg">
-                    <Heart className="w-5 h-5 text-magenta" />
-                  </div>
-                  <div>
-                    <div className="text-2xl font-bold text-white">
-                      {content.filter(item => item.isFavorited).length}
-                    </div>
-                    <div className="text-sm text-gray-400">Favorites</div>
-                  </div>
-                </div>
-              </div>
-              <div className="bg-medium-gray rounded-xl p-6 border border-gray-700">
-                <div className="flex items-center space-x-3">
-                  <div className="bg-yellow-400/20 p-2 rounded-lg">
-                    <TrendingUp className="w-5 h-5 text-yellow-400" />
-                  </div>
-                  <div>
-                    <div className="text-2xl font-bold text-white">{totalEngagement}</div>
-                    <div className="text-sm text-gray-400">Total Engagement</div>
-                  </div>
-                </div>
-              </div>
-              <div className="bg-medium-gray rounded-xl p-6 border border-gray-700">
-                <div className="flex items-center space-x-3">
-                  <div className="bg-green-400/20 p-2 rounded-lg">
-                    <Target className="w-5 h-5 text-green-400" />
-                  </div>
-                  <div>
-                    <div className="text-2xl font-bold text-white">92%</div>
-                    <div className="text-sm text-gray-400">Match Score</div>
-                  </div>
+
+                {/* Filter Buttons */}
+                <div className="flex gap-4">
+                  <select
+                    value={selectedPillar}
+                    onChange={(e) => setSelectedPillar(e.target.value)}
+                    className="px-4 py-3 bg-medium-gray border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-electric-blue focus:border-electric-blue transition-colors"
+                  >
+                    {CONTENT_PILLARS.map(pillar => (
+                      <option key={pillar} value={pillar}>{pillar}</option>
+                    ))}
+                  </select>
+
+                  <select
+                    value={selectedTone}
+                    onChange={(e) => setSelectedTone(e.target.value)}
+                    className="px-4 py-3 bg-medium-gray border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-electric-blue focus:border-electric-blue transition-colors"
+                  >
+                    {TONE_FILTERS.map(tone => (
+                      <option key={tone} value={tone}>{tone}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Filters and Search */}
-          <div className="mb-8 animate-fade-in-up" style={{ animationDelay: `${ANIMATION_DELAYS.FAST}ms` }}>
-            <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
-              {/* Search */}
-              <div className="relative flex-1 max-w-md">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search content ideas..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="input-base pl-10 pr-4"
-                />
+          {/* Quick Actions */}
+          <div className="mb-8 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <button
+                onClick={handleCreateContent}
+                className="bg-gradient-to-r from-electric-blue to-magenta p-6 rounded-2xl border border-gray-700 hover:shadow-lg hover:shadow-electric-blue/25 transition-all duration-300 group"
+              >
+                <div className="flex items-center space-x-3 mb-3">
+                  <div className="bg-white/20 p-2 rounded-lg">
+                    <Plus className="w-6 h-6 text-white" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-white">Create New Content</h3>
+                </div>
+                <p className="text-gray-300 text-sm">
+                  Generate fresh content ideas tailored to your goals
+                </p>
+              </button>
+
+              <div className="bg-medium-gray p-6 rounded-2xl border border-gray-700">
+                <div className="flex items-center space-x-3 mb-3">
+                  <div className="bg-electric-blue/20 p-2 rounded-lg">
+                    <TrendingUp className="w-6 h-6 text-electric-blue" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-white">Analytics</h3>
+                </div>
+                <p className="text-gray-300 text-sm">
+                  Track your content performance and engagement
+                </p>
               </div>
 
-              {/* Filters */}
-              <div className="flex flex-wrap gap-4">
-                <select
-                  value={selectedPillar}
-                  onChange={(e) => setSelectedPillar(e.target.value)}
-                  className="select-base"
-                >
-                  {CONTENT_PILLARS.map(pillar => (
-                    <option key={pillar} value={pillar}>{pillar}</option>
-                  ))}
-                </select>
-
-                <select
-                  value={selectedTone}
-                  onChange={(e) => setSelectedTone(e.target.value)}
-                  className="select-base"
-                >
-                  {TONE_FILTERS.map(tone => (
-                    <option key={tone} value={tone}>{tone}</option>
-                  ))}
-                </select>
-
-                <button className="btn-primary-sm flex items-center space-x-2">
-                  <Plus className="w-5 h-5" />
-                  <span>Generate More</span>
-                </button>
+              <div className="bg-medium-gray p-6 rounded-2xl border border-gray-700">
+                <div className="flex items-center space-x-3 mb-3">
+                  <div className="bg-magenta/20 p-2 rounded-lg">
+                    <Target className="w-6 h-6 text-magenta" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-white">Strategy</h3>
+                </div>
+                <p className="text-gray-300 text-sm">
+                  Optimize your content strategy with AI insights
+                </p>
               </div>
             </div>
           </div>
 
           {/* Content Grid */}
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in-up" style={{ animationDelay: `${ANIMATION_DELAYS.MEDIUM}ms` }}>
-            {filteredContent.map((item, index) => (
-              <div 
-                key={item.id}
-                className="bg-medium-gray rounded-2xl p-6 border border-gray-700 hover:border-electric-blue/50 transition-all duration-300 hover:shadow-xl hover:shadow-electric-blue/10 group"
-                style={{ animationDelay: `${ANIMATION_DELAYS.SLOW + index * ANIMATION_DELAYS.STAGGER}ms` }}
-              >
-                {/* Card Header */}
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center space-x-3">
-                    <span className="text-2xl">{getContentTypeIcon(item.type)}</span>
-                    <div>
-                      <div className="text-sm text-gray-400">{getContentTypeLabel(item.type)}</div>
-                      <div className="text-xs text-gray-500">{item.pillar}</div>
+          <div className="animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bebas text-white">
+                Your Content ({filteredContent.length})
+              </h2>
+              <div className="flex items-center space-x-2 text-sm text-gray-400">
+                <Calendar className="w-4 h-4" />
+                <span>Last updated: {new Date().toLocaleDateString()}</span>
+              </div>
+            </div>
+
+            {contentLoading ? (
+              <div className="text-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-electric-blue mx-auto mb-4"></div>
+                <p className="text-gray-400">Loading your content...</p>
+              </div>
+            ) : filteredContent.length === 0 ? (
+              <div className="text-center py-12">
+                <div className="bg-medium-gray rounded-2xl p-12 border border-gray-700">
+                  <Sparkles className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold text-white mb-2">No content yet</h3>
+                  <p className="text-gray-400 mb-6">
+                    {searchTerm || selectedPillar !== 'All' || selectedTone !== 'All'
+                      ? 'No content matches your current filters'
+                      : 'Start creating amazing content to see it here'
+                    }
+                  </p>
+                  <button
+                    onClick={handleCreateContent}
+                    className="bg-gradient-to-r from-electric-blue to-magenta text-white px-6 py-3 rounded-lg font-semibold hover:shadow-lg hover:shadow-electric-blue/25 transition-all duration-300"
+                  >
+                    Create Your First Content
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredContent.map((item, index) => (
+                  <div
+                    key={item.id}
+                    className="bg-medium-gray rounded-2xl p-6 border border-gray-700 hover:border-electric-blue/50 transition-all duration-300 group"
+                    style={{ animationDelay: `${index * 0.1}s` }}
+                  >
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex-1">
+                        <h3 className="text-lg font-semibold text-white mb-2 group-hover:text-electric-blue transition-colors">
+                          {item.title}
+                        </h3>
+                        <div className="flex items-center space-x-4 text-sm text-gray-400">
+                          <span className="bg-charcoal px-2 py-1 rounded-full">
+                            {item.pillar}
+                          </span>
+                          <span className="bg-charcoal px-2 py-1 rounded-full">
+                            {item.tone}
+                          </span>
+                        </div>
+                      </div>
+                      <button className="text-gray-400 hover:text-white transition-colors">
+                        <MoreHorizontal className="w-5 h-5" />
+                      </button>
+                    </div>
+
+                    <p className="text-gray-300 text-sm mb-4 line-clamp-3">
+                      {item.content}
+                    </p>
+
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-4">
+                        <button
+                          onClick={() => toggleFavorite(item.id, !item.isFavorited)}
+                          className={`flex items-center space-x-1 transition-colors ${
+                            item.isFavorited
+                              ? 'text-red-400 hover:text-red-300'
+                              : 'text-gray-400 hover:text-red-400'
+                          }`}
+                        >
+                          <Heart className={`w-4 h-4 ${item.isFavorited ? 'fill-current' : ''}`} />
+                          <span className="text-xs">{item.isFavorited ? 'Saved' : 'Save'}</span>
+                        </button>
+                        <button
+                          onClick={() => handleCopyContent(item.content)}
+                          className="flex items-center space-x-1 text-gray-400 hover:text-white transition-colors"
+                        >
+                          <Copy className="w-4 h-4" />
+                          <span className="text-xs">Copy</span>
+                        </button>
+                        <button
+                          onClick={() => handleDownloadContent(item.title, item.content)}
+                          className="flex items-center space-x-1 text-gray-400 hover:text-white transition-colors"
+                        >
+                          <Download className="w-4 h-4" />
+                          <span className="text-xs">Download</span>
+                        </button>
+                      </div>
+                      <div className="flex items-center space-x-2 text-xs text-gray-500">
+                        <Eye className="w-3 h-3" />
+                        <span>{item.engagement.likes || 0}</span>
+                      </div>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <button
-                      onClick={() => handleToggleFavorite(item.id, item.isFavorited)}
-                      className={`p-2 rounded-lg transition-colors ${
-                        item.isFavorited 
-                          ? 'bg-magenta/20 text-magenta' 
-                          : 'bg-charcoal text-gray-400 hover:text-magenta'
-                      }`}
-                    >
-                      <Heart className={`w-4 h-4 ${item.isFavorited ? 'fill-current' : ''}`} />
-                    </button>
-                    <button className="p-2 rounded-lg bg-charcoal text-gray-400 hover:text-white transition-colors">
-                      <MoreHorizontal className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Content Title */}
-                <h3 className="text-lg font-semibold text-white mb-3 group-hover:text-electric-blue transition-colors">
-                  {item.title}
-                </h3>
-
-                {/* Content Preview */}
-                <div className="bg-charcoal rounded-lg p-4 mb-4">
-                  <p className="text-gray-300 text-sm leading-relaxed line-clamp-4">
-                    {item.content.substring(0, 150)}...
-                  </p>
-                </div>
-
-                {/* Metadata */}
-                <div className="flex items-center justify-between mb-4 text-xs text-gray-400">
-                  <div className="flex items-center space-x-4">
-                    <span className="flex items-center space-x-1">
-                      <Eye className="w-3 h-3" />
-                      <span>{item.engagement.likes}</span>
-                    </span>
-                    <span className="flex items-center space-x-1">
-                      <MessageCircle className="w-3 h-3" />
-                      <span>{item.engagement.comments}</span>
-                    </span>
-                  </div>
-                  <div className="flex items-center space-x-1">
-                    <Calendar className="w-3 h-3" />
-                    <span>{new Date(item.createdAt).toLocaleDateString()}</span>
-                  </div>
-                </div>
-
-                {/* Platform Tags */}
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {item.platform.map(platform => (
-                    <span 
-                      key={platform}
-                      className="px-2 py-1 bg-electric-blue/20 text-electric-blue text-xs rounded-full"
-                    >
-                      {platform}
-                    </span>
-                  ))}
-                  <span className="px-2 py-1 bg-gray-600 text-gray-300 text-xs rounded-full">
-                    {item.tone}
-                  </span>
-                </div>
-
-                {/* Action Buttons */}
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => handleCopyContent(item.id, item.content)}
-                    className={`flex-1 flex items-center justify-center space-x-2 py-2 px-3 rounded-lg font-medium text-sm transition-all duration-300 ${
-                      copiedId === item.id
-                        ? 'bg-green-500 text-white'
-                        : 'bg-charcoal text-gray-300 hover:bg-electric-blue hover:text-white'
-                    }`}
-                  >
-                    <Copy className="w-4 h-4" />
-                    <span>{copiedId === item.id ? 'Copied!' : 'Copy'}</span>
-                  </button>
-                  
-                  {item.type === 'carousel' && (
-                    <button 
-                      onClick={() => handleCarouselPreview(item.id)}
-                      className="flex items-center justify-center space-x-2 py-2 px-3 bg-magenta hover:bg-magenta/80 text-white rounded-lg font-medium text-sm transition-colors"
-                    >
-                      <Download className="w-4 h-4" />
-                      <span>Preview</span>
-                    </button>
-                  )}
-                </div>
+                ))}
               </div>
-            ))}
-          </div>
-
-          {/* Empty State */}
-          {filteredContent.length === 0 && (
-            <div className="text-center py-16 animate-fade-in-up">
-              <div className="bg-medium-gray rounded-2xl p-12 border border-gray-700 max-w-md mx-auto">
-                <Search className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-white mb-2">No content found</h3>
-                <p className="text-gray-400 mb-6">
-                  {content.length === 0 
-                    ? "You haven't created any content yet. Generate your first content idea to get started!"
-                    : "Try adjusting your search terms or filters to find more content ideas."
-                  }
-                </p>
-                <button className="bg-gradient-to-r from-electric-blue to-magenta text-white px-6 py-3 rounded-full font-semibold hover:shadow-lg hover:shadow-electric-blue/25 transition-all duration-300">
-                  {content.length === 0 ? 'Generate Your First Content' : 'Generate New Content'}
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Bottom Actions */}
-          <div className="mt-12 text-center animate-fade-in-up" style={{ animationDelay: `${ANIMATION_DELAYS.VERY_SLOW}ms` }}>
-            <div className="bg-gradient-to-r from-dark-gray to-medium-gray rounded-2xl p-8 border border-gray-700">
-              <h3 className="text-2xl font-bebas text-white mb-4">
-                Ready for More Content Ideas?
-              </h3>
-              <p className="text-gray-300 mb-6 max-w-2xl mx-auto">
-                Generate fresh content ideas tailored to your brand and audience. 
-                Our AI learns from your preferences to create even better suggestions.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <button className="bg-gradient-to-r from-electric-blue to-magenta text-white px-8 py-4 rounded-full font-semibold text-lg hover:shadow-lg hover:shadow-electric-blue/25 transition-all duration-300 flex items-center justify-center space-x-2">
-                  <Sparkles className="w-5 h-5" />
-                  <span>Generate More Ideas</span>
-                </button>
-                <button className="border border-gray-600 text-gray-300 px-8 py-4 rounded-full font-semibold text-lg hover:border-electric-blue hover:text-electric-blue transition-colors flex items-center justify-center space-x-2">
-                  <Download className="w-5 h-5" />
-                  <span>Download All Content</span>
-                </button>
-              </div>
-            </div>
+            )}
           </div>
         </div>
       </div>

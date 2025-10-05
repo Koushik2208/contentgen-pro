@@ -1,21 +1,8 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import {
-  ArrowLeft,
-  ArrowRight,
-  Check,
-  Zap,
-  User,
-  Briefcase,
-  Target,
-  Mail,
-  Lock,
-  Eye,
-  EyeOff,
-  AlertCircle,
-} from "lucide-react";
-import { useAuth } from "../contexts/AuthContext";
-import { DatabaseService } from "../lib/database";
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { ArrowLeft, ArrowRight, Check, Eye, EyeOff, User, Briefcase, Target } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import { DatabaseService } from '../lib/database';
 
 interface FormData {
   name: string;
@@ -30,75 +17,14 @@ interface FormData {
 interface AuthState {
   isLoading: boolean;
   error: string | null;
-  mode: "signin" | "signup";
+  mode: 'signup' | 'signin';
 }
-
-const professions = [
-  "Marketing Professional",
-  "Sales Manager",
-  "Business Coach",
-  "Consultant",
-  "Entrepreneur",
-  "Real Estate Agent",
-  "Financial Advisor",
-  "Healthcare Professional",
-  "Technology Professional",
-  "Creative Professional",
-  "Other (specify)",
-];
-
-const goals = [
-  {
-    id: "reach",
-    label: "Increase Reach & Visibility",
-    description: "Grow your audience and expand your network",
-  },
-  {
-    id: "authority",
-    label: "Build Thought Leadership",
-    description: "Establish yourself as an industry expert",
-  },
-  {
-    id: "clients",
-    label: "Generate Leads & Clients",
-    description: "Attract potential customers and business opportunities",
-  },
-  {
-    id: "network",
-    label: "Professional Networking",
-    description: "Connect with peers and industry leaders",
-  },
-];
-
-const tones = [
-  {
-    id: "Professional",
-    label: "Professional",
-    description: "Formal, authoritative, business-focused",
-  },
-  {
-    id: "Casual",
-    label: "Conversational",
-    description: "Friendly, approachable, relatable",
-  },
-  {
-    id: "Storytelling",
-    label: "Storytelling",
-    description: "Narrative-driven, engaging, personal",
-  },
-  {
-    id: "Educational",
-    label: "Educational",
-    description: "Informative, helpful, teaching-focused",
-  },
-];
 
 const OnboardingPage = () => {
   const [currentStep, setCurrentStep] = useState(0); // 0 = auth, 1 = profile, 2 = profession, 3 = goals
   const [showPassword, setShowPassword] = useState(false);
-  const [isCheckingOnboarding, setIsCheckingOnboarding] = useState(false);
   const navigate = useNavigate();
-  const { signUp, signIn, user, hasCompletedOnboarding, refreshOnboardingStatus } = useAuth();
+  const { signUp, signIn, user } = useAuth();
 
   const [authState, setAuthState] = useState<AuthState>({
     isLoading: false,
@@ -118,59 +44,26 @@ const OnboardingPage = () => {
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Check if user has completed onboarding before redirecting
-  React.useEffect(() => {
-    const checkOnboardingStatus = async () => {
-      if (user) {
-        setIsCheckingOnboarding(true);
-        try {
-          // If user has completed onboarding, redirect to dashboard
-          if (hasCompletedOnboarding) {
-            navigate("/dashboard");
-            return;
-          }
-
-          // User hasn't completed onboarding, start from step 1
-          setCurrentStep(1);
-          // Reset auth state when moving to onboarding steps
-          setAuthState((prev) => ({
-            ...prev,
-            isLoading: false,
-            error: null,
-          }));
-        } catch (error) {
-          console.error("Error checking onboarding status:", error);
-          // If there's an error, assume onboarding is not complete
-          setCurrentStep(1);
-          setAuthState((prev) => ({ ...prev, isLoading: false, error: null }));
-        } finally {
-          setIsCheckingOnboarding(false);
-        }
-      }
-    };
-
-    checkOnboardingStatus();
-  }, [user, hasCompletedOnboarding, navigate]);
+  // Simple redirect logic - if user is authenticated, go to dashboard
+  useEffect(() => {
+    if (user) {
+      navigate('/dashboard');
+    }
+  }, [user, navigate]);
 
   const handleEmailAuth = async () => {
     const newErrors: Record<string, string> = {};
-
     if (!formData.email.trim()) newErrors.email = "Email is required";
     else if (!/\S+@\S+\.\S+/.test(formData.email))
       newErrors.email = "Please enter a valid email";
-
     if (!formData.password.trim()) newErrors.password = "Password is required";
     else if (formData.password.length < 6)
       newErrors.password = "Password must be at least 6 characters";
-
     setErrors(newErrors);
-
     if (Object.keys(newErrors).length > 0) {
       return;
     }
-
     setAuthState((prev) => ({ ...prev, isLoading: true, error: null }));
-
     try {
       if (authState.mode === "signup") {
         const { error } = await signUp(formData.email, formData.password);
@@ -182,7 +75,6 @@ const OnboardingPage = () => {
           }));
           return;
         }
-        // For signup, show success message and wait for email verification
         setAuthState((prev) => ({
           ...prev,
           error:
@@ -199,7 +91,6 @@ const OnboardingPage = () => {
           }));
           return;
         }
-        // For sign in, move to next step and reset loading state
         setCurrentStep(1);
         setAuthState((prev) => ({ ...prev, isLoading: false, error: null }));
       }
@@ -214,39 +105,26 @@ const OnboardingPage = () => {
 
   const validateStep = (step: number): boolean => {
     const newErrors: Record<string, string> = {};
-
     if (step === 1) {
       if (!formData.name.trim()) newErrors.name = "Name is required";
-    }
-
-    if (step === 2) {
-      if (!formData.profession)
-        newErrors.profession = "Please select your profession";
-      if (
-        formData.profession === "Other (specify)" &&
-        !formData.customProfession.trim()
-      ) {
+    } else if (step === 2) {
+      if (!formData.profession.trim()) newErrors.profession = "Profession is required";
+      if (formData.profession === "Other (specify)" && !formData.customProfession.trim()) {
         newErrors.customProfession = "Please specify your profession";
       }
+    } else if (step === 3) {
+      if (formData.goals.length === 0) newErrors.goals = "Please select at least one goal";
+      if (!formData.tone.trim()) newErrors.tone = "Please select a tone";
     }
-
-    if (step === 3) {
-      if (formData.goals.length === 0)
-        newErrors.goals = "Please select at least one goal";
-      if (!formData.tone) newErrors.tone = "Please select your preferred tone";
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleNext = () => {
     if (currentStep === 0) {
-      // Auth step handled by separate functions
       handleEmailAuth();
       return;
     }
-
     if (validateStep(currentStep)) {
       if (currentStep < 3) {
         setCurrentStep(currentStep + 1);
@@ -259,26 +137,21 @@ const OnboardingPage = () => {
   const handleBack = () => {
     if (currentStep > 0) {
       setCurrentStep(currentStep - 1);
-    } else {
-      navigate("/");
     }
   };
 
   const handleSubmit = async () => {
     if (!user) return;
-
+    
     setAuthState((prev) => ({ ...prev, isLoading: true }));
-
     try {
       // Save user profile
       await DatabaseService.upsertUserProfile({
         id: user.id,
+        email: user.email || '',
         name: formData.name,
-        email: user.email || formData.email,
-        industry:
-          formData.profession !== "Other (specify)"
-            ? formData.profession
-            : formData.customProfession,
+        industry: formData.profession !== 'Other (specify)' ? formData.profession : formData.customProfession,
+        target_audience: formData.goals.join(', ')
       });
 
       // Save user preferences
@@ -288,98 +161,74 @@ const OnboardingPage = () => {
         custom_profession: formData.customProfession,
         content_goals: formData.goals,
         preferred_tone: formData.tone,
-        content_pillars: [
-          "Thought Leadership",
-          "Tips & Advice",
-          "Personal Story",
-          "Business Growth",
-          "Behind the Scenes",
-        ],
+        content_pillars: [],
+        email_notifications: {
+          contentReady: true,
+          weeklyDigest: true,
+          productUpdates: true,
+          tips: true
+        }
       });
 
-      // Refresh onboarding status and navigate to dashboard
-      await refreshOnboardingStatus();
-      navigate("/dashboard");
+      // Redirect to dashboard
+      navigate('/dashboard');
     } catch (error) {
-      console.error("Error saving user data:", error);
+      console.error('Error saving onboarding data:', error);
       setAuthState((prev) => ({
         ...prev,
-        error: "Failed to save your preferences. Please try again.",
+        error: 'Failed to save your preferences. Please try again.',
         isLoading: false,
       }));
     }
   };
 
-  const handleBackToHome = () => {
-    navigate("/");
-  };
-
-
   const handleGoalToggle = (goalId: string) => {
-    setFormData((prev) => ({
+    setFormData(prev => ({
       ...prev,
       goals: prev.goals.includes(goalId)
-        ? prev.goals.filter((g) => g !== goalId)
-        : [...prev.goals, goalId],
+        ? prev.goals.filter(g => g !== goalId)
+        : [...prev.goals, goalId]
     }));
   };
 
-  const getStepIcon = (step: number) => {
-    switch (step) {
-      case 0:
-        return User;
-      case 1:
-        return User;
-      case 2:
-        return Briefcase;
-      case 3:
-        return Target;
-      default:
-        return User;
-    }
+  const handleBackToLanding = () => {
+    navigate('/');
   };
 
-  const getStepTitle = (step: number) => {
-    switch (step) {
-      case 0:
-        return "Welcome to ContentGen Pro";
-      case 1:
-        return "Personal Information";
-      case 2:
-        return "Your Profession";
-      case 3:
-        return "Goals & Style";
-      default:
-        return "";
-    }
-  };
+  const steps = [
+    { id: 0, title: 'Create Account', icon: User },
+    { id: 1, title: 'Your Profile', icon: User },
+    { id: 2, title: 'Your Profession', icon: Briefcase },
+    { id: 3, title: 'Your Goals', icon: Target },
+  ];
 
-  const getStepDescription = (step: number) => {
-    switch (step) {
-      case 0:
-        return "Sign in to start creating amazing content";
-      case 1:
-        return "Let's complete your profile";
-      case 2:
-        return "Tell us about your professional background";
-      case 3:
-        return "Define your content goals and preferred tone";
-      default:
-        return "";
-    }
-  };
+  const goals = [
+    { id: 'reach', label: 'Increase Reach & Visibility' },
+    { id: 'authority', label: 'Build Thought Leadership' },
+    { id: 'clients', label: 'Generate Leads & Clients' },
+    { id: 'network', label: 'Professional Networking' }
+  ];
 
-  // Show loading while checking onboarding status
-  if (isCheckingOnboarding) {
-    return (
-      <div className="min-h-screen bg-charcoal flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-electric-blue mx-auto mb-4"></div>
-          <p className="text-gray-400">Checking your account...</p>
-        </div>
-      </div>
-    );
-  }
+  const tones = [
+    { id: 'Professional', label: 'Professional' },
+    { id: 'Conversational', label: 'Conversational' },
+    { id: 'Storytelling', label: 'Storytelling' },
+    { id: 'Educational', label: 'Educational' }
+  ];
+
+  const professions = [
+    'Marketing Professional',
+    'Sales Manager',
+    'Business Coach',
+    'Consultant',
+    'Entrepreneur',
+    'Real Estate Agent',
+    'Financial Advisor',
+    'Healthcare Professional',
+    'Technology Professional',
+    'Creative Professional',
+    'Other (specify)'
+  ];
 
   return (
     <div className="min-h-screen bg-charcoal text-white font-manrope">
@@ -396,236 +245,183 @@ const OnboardingPage = () => {
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
                 <div className="bg-gradient-to-r from-electric-blue to-magenta p-2 rounded-lg">
-                  <Zap className="w-6 h-6 text-white" />
+                  <User className="w-6 h-6 text-white" />
                 </div>
                 <span className="text-2xl font-bebas text-white">
                   ContentGen Pro
                 </span>
               </div>
               <button
-                onClick={handleBackToHome}
-                className="flex items-center space-x-2 text-gray-400 hover:text-white transition-colors"
+                onClick={handleBackToLanding}
+                className="text-gray-400 hover:text-white transition-colors"
               >
-                <ArrowLeft className="w-4 h-4" />
-                <span>Back to Home</span>
+                Back to Home
               </button>
             </div>
           </div>
         </header>
 
-        {/* Progress Bar - Only show after auth */}
-        {currentStep > 0 && (
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <div className="flex items-center justify-center space-x-8 mb-12">
-              {[1, 2, 3].map((step) => {
-                const StepIcon = getStepIcon(step);
-                const isActive = step === currentStep;
-                const isCompleted = step < currentStep;
-
-                return (
-                  <div key={step} className="flex items-center">
-                    <div
-                      className={`flex items-center justify-center w-12 h-12 rounded-full border-2 transition-all duration-300 ${
-                        isCompleted
-                          ? "bg-gradient-to-r from-electric-blue to-magenta border-transparent"
-                          : isActive
-                          ? "border-electric-blue bg-electric-blue/10"
-                          : "border-gray-600 bg-medium-gray"
-                      }`}
-                    >
-                      {isCompleted ? (
-                        <Check className="w-6 h-6 text-white" />
-                      ) : (
-                        <StepIcon
-                          className={`w-6 h-6 ${
-                            isActive ? "text-electric-blue" : "text-gray-400"
-                          }`}
-                        />
-                      )}
-                    </div>
-                    {step < 3 && (
-                      <div
-                        className={`w-16 h-1 mx-4 transition-all duration-300 ${
-                          step < currentStep
-                            ? "bg-gradient-to-r from-electric-blue to-magenta"
-                            : "bg-gray-600"
-                        }`}
-                      ></div>
+        {/* Progress Bar */}
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="flex items-center justify-between mb-8">
+            {steps.map((step, index) => {
+              const IconComponent = step.icon;
+              const isActive = currentStep === step.id;
+              const isCompleted = currentStep > step.id;
+              
+              return (
+                <div key={step.id} className="flex items-center">
+                  <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all duration-300 ${
+                    isActive 
+                      ? 'border-electric-blue bg-electric-blue text-white' 
+                      : isCompleted 
+                        ? 'border-green-500 bg-green-500 text-white'
+                        : 'border-gray-600 text-gray-400'
+                  }`}>
+                    {isCompleted ? (
+                      <Check className="w-5 h-5" />
+                    ) : (
+                      <IconComponent className="w-5 h-5" />
                     )}
                   </div>
-                );
-              })}
-            </div>
+                  <div className="ml-3">
+                    <div className={`text-sm font-medium ${
+                      isActive ? 'text-electric-blue' : isCompleted ? 'text-green-400' : 'text-gray-400'
+                    }`}>
+                      {step.title}
+                    </div>
+                  </div>
+                  {index < steps.length - 1 && (
+                    <div className={`w-16 h-0.5 mx-4 ${
+                      isCompleted ? 'bg-green-500' : 'bg-gray-600'
+                    }`} />
+                  )}
+                </div>
+              );
+            })}
           </div>
-        )}
+        </div>
 
         {/* Main Content */}
-        <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
-          <div className="text-center mb-8">
-            <h1 className="text-4xl font-bebas text-white mb-4">
-              {getStepTitle(currentStep)}
-            </h1>
-            <p className="text-xl text-gray-300">
-              {getStepDescription(currentStep)}
-            </p>
-          </div>
-
+        <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
           <div className="bg-medium-gray rounded-2xl p-8 border border-gray-700">
             {/* Step 0: Authentication */}
             {currentStep === 0 && (
-              <div className="space-y-8">
+              <div className="space-y-6">
+                <div className="text-center mb-8">
+                  <h2 className="text-3xl font-bebas text-white mb-4">
+                    Welcome to ContentGen Pro
+                  </h2>
+                  <p className="text-gray-300">
+                    Create your account to start generating amazing content
+                  </p>
+                </div>
+
                 {/* Auth Mode Toggle */}
                 <div className="flex bg-charcoal rounded-lg p-1 mb-6">
                   <button
-                    onClick={() =>
-                      setAuthState((prev) => ({
-                        ...prev,
-                        mode: "signup",
-                        error: null,
-                        isLoading: false,
-                      }))
-                    }
-                    className={`flex-1 py-3 px-4 rounded-md text-sm font-medium transition-colors ${
-                      authState.mode === "signup"
-                        ? "bg-electric-blue text-white"
-                        : "text-gray-400 hover:text-white"
+                    onClick={() => setAuthState(prev => ({ ...prev, mode: 'signup', error: null }))}
+                    className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+                      authState.mode === 'signup'
+                        ? 'bg-electric-blue text-white'
+                        : 'text-gray-400 hover:text-white'
                     }`}
                   >
                     Sign Up
                   </button>
                   <button
-                    onClick={() =>
-                      setAuthState((prev) => ({
-                        ...prev,
-                        mode: "signin",
-                        error: null,
-                        isLoading: false,
-                      }))
-                    }
-                    className={`flex-1 py-3 px-4 rounded-md text-sm font-medium transition-colors ${
-                      authState.mode === "signin"
-                        ? "bg-electric-blue text-white"
-                        : "text-gray-400 hover:text-white"
+                    onClick={() => setAuthState(prev => ({ ...prev, mode: 'signin', error: null }))}
+                    className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+                      authState.mode === 'signin'
+                        ? 'bg-electric-blue text-white'
+                        : 'text-gray-400 hover:text-white'
                     }`}
                   >
                     Sign In
                   </button>
                 </div>
 
-
-                {/* Email Field */}
-                <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Email Address *
-                  </label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                {/* Auth Form */}
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Email Address *
+                    </label>
                     <input
                       type="email"
                       value={formData.email}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          email: e.target.value,
-                        }))
-                      }
-                      className={`w-full pl-10 pr-4 py-3 bg-charcoal border rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-electric-blue transition-colors ${
-                        errors.email
-                          ? "border-red-500"
-                          : "border-gray-600 focus:border-electric-blue"
+                      onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                      className={`w-full px-4 py-3 bg-charcoal border rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-electric-blue transition-colors ${
+                        errors.email ? 'border-red-500' : 'border-gray-600 focus:border-electric-blue'
                       }`}
                       placeholder="Enter your email address"
                     />
+                    {errors.email && <p className="text-red-400 text-sm mt-1">{errors.email}</p>}
                   </div>
-                  {errors.email && (
-                    <p className="text-red-400 text-sm mt-1">{errors.email}</p>
-                  )}
-                </div>
 
-                {/* Password Field */}
-                <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Password *
-                  </label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      value={formData.password}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          password: e.target.value,
-                        }))
-                      }
-                      className={`w-full pl-10 pr-12 py-3 bg-charcoal border rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-electric-blue transition-colors ${
-                        errors.password
-                          ? "border-red-500"
-                          : "border-gray-600 focus:border-electric-blue"
-                      }`}
-                      placeholder={
-                        authState.mode === "signup"
-                          ? "Create a password (min 6 characters)"
-                          : "Enter your password"
-                      }
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
-                    >
-                      {showPassword ? (
-                        <EyeOff className="w-5 h-5" />
-                      ) : (
-                        <Eye className="w-5 h-5" />
-                      )}
-                    </button>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Password *
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        value={formData.password}
+                        onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+                        className={`w-full px-4 py-3 bg-charcoal border rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-electric-blue transition-colors pr-12 ${
+                          errors.password ? 'border-red-500' : 'border-gray-600 focus:border-electric-blue'
+                        }`}
+                        placeholder="Enter your password"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+                      >
+                        {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                      </button>
+                    </div>
+                    {errors.password && <p className="text-red-400 text-sm mt-1">{errors.password}</p>}
                   </div>
-                  {errors.password && (
-                    <p className="text-red-400 text-sm mt-1">
-                      {errors.password}
-                    </p>
-                  )}
                 </div>
 
                 {/* Error Message */}
                 {authState.error && (
-                  <div className="flex items-center space-x-2 p-4 bg-red-900/20 border border-red-500/30 rounded-lg mb-6">
-                    <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0" />
+                  <div className="bg-red-900/20 border border-red-500/30 rounded-lg p-4">
                     <p className="text-red-400 text-sm">{authState.error}</p>
                   </div>
                 )}
 
-                {/* Submit Button */}
+                {/* Continue Button */}
                 <button
-                  onClick={handleEmailAuth}
+                  onClick={handleNext}
                   disabled={authState.isLoading}
-                  className="w-full bg-gradient-to-r from-electric-blue to-magenta text-white py-4 px-8 rounded-2xl font-semibold text-lg hover:shadow-lg hover:shadow-electric-blue/25 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                  className="w-full bg-gradient-to-r from-electric-blue to-magenta text-white py-4 rounded-lg font-semibold hover:shadow-lg hover:shadow-electric-blue/25 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {authState.isLoading ? (
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  ) : null}
-                  <span>
-                    {authState.mode === "signup"
-                      ? "Create Account & Continue"
-                      : "Sign In"}
-                  </span>
+                    <div className="flex items-center justify-center space-x-2">
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      <span>Processing...</span>
+                    </div>
+                  ) : (
+                    'Continue'
+                  )}
                 </button>
-
-                {/* Additional Info */}
-                <div className="text-center mt-6">
-                  <p className="text-gray-400 text-sm">
-                    {authState.mode === "signup"
-                      ? "By signing up, you agree to our Terms of Service and Privacy Policy"
-                      : "Welcome back! Sign in to continue building your content"}
-                  </p>
-                </div>
               </div>
             )}
 
-            {/* Step 1: Personal Information */}
+            {/* Step 1: Profile */}
             {currentStep === 1 && (
               <div className="space-y-6">
+                <div className="text-center mb-8">
+                  <h2 className="text-3xl font-bebas text-white mb-4">
+                    Tell us about yourself
+                  </h2>
+                  <p className="text-gray-300">
+                    Help us personalize your content experience
+                  </p>
+                </div>
+
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
                     Full Name *
@@ -633,19 +429,13 @@ const OnboardingPage = () => {
                   <input
                     type="text"
                     value={formData.name}
-                    onChange={(e) =>
-                      setFormData((prev) => ({ ...prev, name: e.target.value }))
-                    }
+                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                     className={`w-full px-4 py-3 bg-charcoal border rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-electric-blue transition-colors ${
-                      errors.name
-                        ? "border-red-500"
-                        : "border-gray-600 focus:border-electric-blue"
+                      errors.name ? 'border-red-500' : 'border-gray-600 focus:border-electric-blue'
                     }`}
                     placeholder="Enter your full name"
                   />
-                  {errors.name && (
-                    <p className="text-red-400 text-sm mt-1">{errors.name}</p>
-                  )}
+                  {errors.name && <p className="text-red-400 text-sm mt-1">{errors.name}</p>}
                 </div>
               </div>
             )}
@@ -653,22 +443,24 @@ const OnboardingPage = () => {
             {/* Step 2: Profession */}
             {currentStep === 2 && (
               <div className="space-y-6">
+                <div className="text-center mb-8">
+                  <h2 className="text-3xl font-bebas text-white mb-4">
+                    What's your profession?
+                  </h2>
+                  <p className="text-gray-300">
+                    This helps us tailor content to your industry
+                  </p>
+                </div>
+
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    What best describes your profession? *
+                    Profession *
                   </label>
                   <select
                     value={formData.profession}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        profession: e.target.value,
-                      }))
-                    }
-                    className={`w-full px-4 py-3 bg-charcoal border rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-electric-blue transition-colors ${
-                      errors.profession
-                        ? "border-red-500"
-                        : "border-gray-600 focus:border-electric-blue"
+                    onChange={(e) => setFormData(prev => ({ ...prev, profession: e.target.value }))}
+                    className={`w-full px-4 py-3 bg-charcoal border rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-electric-blue focus:border-electric-blue transition-colors ${
+                      errors.profession ? 'border-red-500' : 'border-gray-600'
                     }`}
                   >
                     <option value="">Select your profession</option>
@@ -678,39 +470,24 @@ const OnboardingPage = () => {
                       </option>
                     ))}
                   </select>
-                  {errors.profession && (
-                    <p className="text-red-400 text-sm mt-1">
-                      {errors.profession}
-                    </p>
-                  )}
+                  {errors.profession && <p className="text-red-400 text-sm mt-1">{errors.profession}</p>}
                 </div>
 
-                {formData.profession === "Other (specify)" && (
+                {formData.profession === 'Other (specify)' && (
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Please specify your profession *
+                      Specify Your Profession *
                     </label>
                     <input
                       type="text"
                       value={formData.customProfession}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          customProfession: e.target.value,
-                        }))
-                      }
-                      className={`w-full px-4 py-3 bg-charcoal border rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-electric-blue transition-colors ${
-                        errors.customProfession
-                          ? "border-red-500"
-                          : "border-gray-600 focus:border-electric-blue"
+                      onChange={(e) => setFormData(prev => ({ ...prev, customProfession: e.target.value }))}
+                      className={`w-full px-4 py-3 bg-charcoal border rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-electric-blue focus:border-electric-blue transition-colors ${
+                        errors.customProfession ? 'border-red-500' : 'border-gray-600'
                       }`}
                       placeholder="Enter your profession"
                     />
-                    {errors.customProfession && (
-                      <p className="text-red-400 text-sm mt-1">
-                        {errors.customProfession}
-                      </p>
-                    )}
+                    {errors.customProfession && <p className="text-red-400 text-sm mt-1">{errors.customProfession}</p>}
                   </div>
                 )}
               </div>
@@ -719,9 +496,19 @@ const OnboardingPage = () => {
             {/* Step 3: Goals & Tone */}
             {currentStep === 3 && (
               <div className="space-y-8">
+                <div className="text-center mb-8">
+                  <h2 className="text-3xl font-bebas text-white mb-4">
+                    What are your goals?
+                  </h2>
+                  <p className="text-gray-300">
+                    Select your content goals and preferred tone
+                  </p>
+                </div>
+
+                {/* Goals */}
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-4">
-                    What are your main content goals? (Select all that apply) *
+                    Content Goals (Select all that apply) *
                   </label>
                   <div className="grid sm:grid-cols-2 gap-4">
                     {goals.map((goal) => (
@@ -730,92 +517,66 @@ const OnboardingPage = () => {
                         onClick={() => handleGoalToggle(goal.id)}
                         className={`p-4 rounded-lg border-2 text-left transition-all duration-300 ${
                           formData.goals.includes(goal.id)
-                            ? "border-electric-blue bg-electric-blue/10"
-                            : "border-gray-600 bg-charcoal hover:border-gray-500"
+                            ? 'border-electric-blue bg-electric-blue/10'
+                            : 'border-gray-600 bg-charcoal hover:border-gray-500'
                         }`}
                       >
-                        <div className="flex items-start space-x-3">
-                          <div
-                            className={`w-5 h-5 rounded border-2 flex items-center justify-center mt-0.5 ${
-                              formData.goals.includes(goal.id)
-                                ? "border-electric-blue bg-electric-blue"
-                                : "border-gray-500"
-                            }`}
-                          >
+                        <div className="flex items-center space-x-3">
+                          <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
+                            formData.goals.includes(goal.id)
+                              ? 'border-electric-blue bg-electric-blue'
+                              : 'border-gray-500'
+                          }`}>
                             {formData.goals.includes(goal.id) && (
                               <Check className="w-3 h-3 text-white" />
                             )}
                           </div>
-                          <div>
-                            <h4 className="font-semibold text-white mb-1">
-                              {goal.label}
-                            </h4>
-                            <p className="text-sm text-gray-400">
-                              {goal.description}
-                            </p>
-                          </div>
+                          <span className="font-semibold text-white">{goal.label}</span>
                         </div>
                       </button>
                     ))}
                   </div>
-                  {errors.goals && (
-                    <p className="text-red-400 text-sm mt-2">{errors.goals}</p>
-                  )}
+                  {errors.goals && <p className="text-red-400 text-sm mt-2">{errors.goals}</p>}
                 </div>
 
+                {/* Tone */}
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-4">
-                    What's your preferred content tone? *
+                    Preferred Content Tone *
                   </label>
                   <div className="grid sm:grid-cols-2 gap-4">
                     {tones.map((tone) => (
                       <button
                         key={tone.id}
-                        onClick={() =>
-                          setFormData((prev) => ({ ...prev, tone: tone.id }))
-                        }
+                        onClick={() => setFormData(prev => ({ ...prev, tone: tone.id }))}
                         className={`p-4 rounded-lg border-2 text-left transition-all duration-300 ${
                           formData.tone === tone.id
-                            ? "border-magenta bg-magenta/10"
-                            : "border-gray-600 bg-charcoal hover:border-gray-500"
+                            ? 'border-magenta bg-magenta/10'
+                            : 'border-gray-600 bg-charcoal hover:border-gray-500'
                         }`}
                       >
-                        <div className="flex items-start space-x-3">
-                          <div
-                            className={`w-5 h-5 rounded-full border-2 flex items-center justify-center mt-0.5 ${
-                              formData.tone === tone.id
-                                ? "border-magenta bg-magenta"
-                                : "border-gray-500"
-                            }`}
-                          >
+                        <div className="flex items-center space-x-3">
+                          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                            formData.tone === tone.id
+                              ? 'border-magenta bg-magenta'
+                              : 'border-gray-500'
+                          }`}>
                             {formData.tone === tone.id && (
                               <div className="w-2 h-2 bg-white rounded-full"></div>
                             )}
                           </div>
-                          <div>
-                            <h4 className="font-semibold text-white mb-1">
-                              {tone.label}
-                            </h4>
-                            <p className="text-sm text-gray-400">
-                              {tone.description}
-                            </p>
-                          </div>
+                          <span className="font-semibold text-white">{tone.label}</span>
                         </div>
                       </button>
                     ))}
                   </div>
-                  {errors.tone && (
-                    <p className="text-red-400 text-sm mt-2">{errors.tone}</p>
-                  )}
+                  {errors.tone && <p className="text-red-400 text-sm mt-2">{errors.tone}</p>}
                 </div>
               </div>
             )}
 
             {/* Navigation Buttons */}
-            {currentStep === 0 ? (
-              // Auth step buttons are handled in the auth form
-              null
-            ) : (
+            {currentStep > 0 && (
               <div className="flex justify-between items-center mt-8 pt-6 border-t border-gray-600">
                 <button
                   onClick={handleBack}
@@ -824,7 +585,6 @@ const OnboardingPage = () => {
                   <ArrowLeft className="w-4 h-4" />
                   <span>Back</span>
                 </button>
-
                 <button
                   onClick={handleNext}
                   disabled={authState.isLoading}
@@ -834,24 +594,10 @@ const OnboardingPage = () => {
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                   ) : null}
                   <span>
-                    {currentStep === 3 ? "Complete Setup" : "Continue"}
+                    {currentStep === 3 ? 'Complete Setup' : 'Continue'}
                   </span>
                   {!authState.isLoading && <ArrowRight className="w-4 h-4" />}
                 </button>
-              </div>
-            )}
-
-            {/* Progress Text - Only show after auth */}
-            {currentStep > 0 && (
-              <div className="text-center mt-6">
-                {authState.error && currentStep === 3 && (
-                  <div className="mb-4 p-3 bg-red-900/20 border border-red-500/30 rounded-lg">
-                    <p className="text-red-400 text-sm">{authState.error}</p>
-                  </div>
-                )}
-                <p className="text-gray-400">
-                  Step {currentStep} of 3 • Takes less than 2 minutes
-                </p>
               </div>
             )}
           </div>

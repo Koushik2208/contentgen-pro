@@ -30,9 +30,9 @@ const LandingPage = () => {
   );
 };
 
-// Protected Route Component
+// Simple Protected Route - just checks if user is authenticated
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, loading, hasCompletedOnboarding } = useAuth();
+  const { user, loading } = useAuth();
 
   if (loading) {
     return (
@@ -49,11 +49,6 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     return <Navigate to="/" replace />;
   }
 
-  // If user is authenticated but hasn't completed onboarding, redirect to onboarding
-  if (!hasCompletedOnboarding) {
-    return <Navigate to="/onboarding" replace />;
-  }
-
   return <>{children}</>;
 };
 
@@ -64,10 +59,10 @@ function App() {
         {/* Landing Page */}
         <Route path="/" element={<LandingPage />} />
         
-        {/* Onboarding */}
+        {/* Onboarding - accessible to authenticated users */}
         <Route path="/onboarding" element={<OnboardingPage />} />
         
-        {/* Protected Routes */}
+        {/* Protected Routes - require authentication */}
         <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
         <Route path="/carousel/:carouselId" element={<ProtectedRoute><CarouselPreviewPage /></ProtectedRoute>} />
         <Route path="/profile" element={<ProtectedRoute><ProfileSettingsPage /></ProtectedRoute>} />
